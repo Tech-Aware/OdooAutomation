@@ -8,43 +8,19 @@ Dépendances :
 Auteur : Kevin, Tech Aware
 """
 
-import xmlrpc.client
 from datetime import datetime, timedelta
-import logging
-import sys
-import os
-
-# === Import de la config logging ===
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config.log_config import setup_logger
+from config.odoo_connect import get_odoo_connection
 
 # Initialisation logging
-logger = setup_logger("schedule_facebook_post.log")
+logger = setup_logger()
 
 # === Configuration Odoo ===
-ODOO_URL = "https://ton-instance-odoo.com"
-ODOO_DB = "nom_de_ta_base"
-ODOO_USERNAME = "ton_login"
-ODOO_PASSWORD = "ton_mdp"
 
-def connect_odoo():
-    try:
-        common = xmlrpc.client.ServerProxy(f"{ODOO_URL}/xmlrpc/2/common")
-        uid = common.authenticate(ODOO_DB, ODOO_USERNAME, ODOO_PASSWORD, {})
-        if not uid:
-            logger.error("Echec d'authentification à Odoo")
-            raise Exception("Authentication failed")
-        models = xmlrpc.client.ServerProxy(f"{ODOO_URL}/xmlrpc/2/object")
-        logger.info("Connexion Odoo réussie")
-        return uid, models
-    except Exception as e:
-        logger.error(f"Erreur lors de la connexion à Odoo : {e}")
-        raise
-
-def get_facebook_stream_id(models, uid):
+def get_facebook_stream_id(models, db, uid, password):
     try:
         streams = models.execute_kw(
-            ODOO_DB, uid, ODOO_PASSWORD,
+            db, uid, password,
             'marketing.social.stream', 'search_read',
             [[['media', '=', 'facebook']]],
             {'fields': ['id', 'name']}
@@ -59,7 +35,7 @@ def get_facebook_stream_id(models, uid):
         logger.error(f"Erreur lors de la récupération du flux Facebook : {e}")
         raise
 
-def schedule_post(models, uid, stream_id, message, minutes_later=30):
+def schedule_post(models, db, uid, password, stream_id, message, minutes_later=30):
     try:
         scheduled_date = (datetime.utcnow() + timedelta(minutes=minutes_later)).strftime('%Y-%m-%d %H:%M:%S')
         post_vals = {
@@ -69,7 +45,7 @@ def schedule_post(models, uid, stream_id, message, minutes_later=30):
             'media': 'facebook',
         }
         post_id = models.execute_kw(
-            ODOO_DB, uid, ODOO_PASSWORD,
+            db, uid, password,
             'marketing.social.post', 'create',
             [post_vals]
         )
@@ -81,10 +57,10 @@ def schedule_post(models, uid, stream_id, message, minutes_later=30):
 
 def main():
     try:
-        uid, models = connect_odoo()
-        stream_id = get_facebook_stream_id(models, uid)
+        db, uid, password, models = get_odoo_connection()
+        stream_id = get_facebook_stream_id(models, db, uid, password)
         post_message = "Votre message Facebook automatisé avec Odoo et Python 🚀"
-        schedule_post(models, uid, stream_id, post_message)
+        schedule_post(models, db, uid, password, stream_id, post_message)
         logger.info("Script terminé avec succès.")
     except Exception as err:
         logger.error(f"Échec du script : {err}")
