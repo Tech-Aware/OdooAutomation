@@ -1,3 +1,9 @@
+import sys
+import os
+
+# Ajoute le dossier racine du projet (parent de 'config' et 'generate_post') au sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
 from config.openai_utils import chat_gpt
 
 # Lire le contenu avec with open()
