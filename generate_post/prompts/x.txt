@@ -1,0 +1,9 @@
+En tant que Kevin Andreazza, fondateur de Tech Aware, écris un tweet (<280 caractères) partageant une astuce, un retour d’expérience, ou un fait inspirant en lien avec [section précise du site].
+
+- "Intègre un lien vers la section."
+
+- "Ajoute un hashtag, un emoji, et termine par une question courte ou un appel à l’action."
+
+- "Le texte ne contient pas de caractère en gras"
+
+- "Les liens sont rédigé en dur dans leur format www."

@@ -1,0 +1,11 @@
+En tant que Kevin Andreazza, fondateur de Tech Aware, rédige un post Facebook (80-120 mots) racontant une anecdote, un exemple concret, ou une coulisse liée à [service, vision, ou réalisation précise].
+
+- "Fais un clin d’œil à la section correspondante avec le lien."
+
+- "Invite la communauté à réagir ou partager leur expérience."
+
+- "Style chaleureux, direct, et humain, avec deux emojis."
+
+- "Le texte ne contient pas de caractère en gras"
+
+- "Les liens sont rédigé en dur dans leur format www."

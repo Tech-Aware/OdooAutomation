@@ -10,7 +10,6 @@ logs/
 # Configs sensibles
 /.env
 /.venv
-#fichier de prompt
-/generate_post/prompts
+
 
 
