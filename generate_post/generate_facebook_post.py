@@ -1,9 +1,6 @@
 import sys
 import os
-
-# Ajoute la racine du projet au sys.path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config.openai_utils import chat_gpt
 
 # Lire le contenu avec with open()
