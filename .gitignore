@@ -1,0 +1,16 @@
+# Environnement virtuel
+venv/
+.env
+*.pyc
+__pycache__/
+.idea
+# Logs
+*.log
+logs/
+# Configs sensibles
+/.env
+/.venv
+#fichier de prompt
+/generate_post/prompts
+
+
