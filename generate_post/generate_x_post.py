@@ -1,13 +1,12 @@
 import sys
 import os
 
-# Ajoute le dossier racine du projet (parent de 'config' et 'generate_post') au sys.path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config.openai_utils import chat_gpt
 
-# Lire le contenu avec with open()
-with open('prompts/x.txt', 'r', encoding='utf-8') as f:
+# Construction du chemin absolu vers le fichier de prompt
+prompt_path = os.path.join(os.path.dirname(__file__), 'prompts', 'x.txt')
+with open(prompt_path, 'r', encoding='utf-8') as f:
     x_prompt = f.read()
 
 reponse = chat_gpt(x_prompt)

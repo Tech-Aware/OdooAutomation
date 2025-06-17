@@ -15,7 +15,7 @@ import sys
 import os
 
 # === Import de la config logging ===
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../config')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config.log_config import setup_logger
 
 # Initialisation logging

@@ -1,13 +1,11 @@
 import sys
 import os
-
-# Ajoute le dossier racine du projet (parent de 'config' et 'generate_post') au sys.path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config.openai_utils import chat_gpt
 
-# Lire le contenu avec with open()
-with open('prompts/linkedin.txt', 'r', encoding='utf-8') as f:
+# Construction du chemin absolu vers le fichier de prompt
+prompt_path = os.path.join(os.path.dirname(__file__), 'prompts', 'linkedin.txt')
+with open(prompt_path, 'r', encoding='utf-8') as f:
     linkedin_prompt = f.read()
 
 reponse = chat_gpt(linkedin_prompt)
