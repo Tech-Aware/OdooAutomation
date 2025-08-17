@@ -8,6 +8,7 @@ Ce dépôt contient des scripts d'automatisation autour d'Odoo. On y génère de
 - **generate_post/** : scripts de génération de posts (Facebook, LinkedIn, X) basés sur ChatGPT. Les prompts sont stockés dans `prompts/`.
 - **schedule_post_in_odoo/** : script pour planifier une publication dans Odoo (exemple pour Facebook).
 - **pos_product_interaction/** : exemples de manipulation de produits du point de vente (duplication).
+- **pos_category_management/** : activation ou désactivation automatique des catégories du point de vente selon le jour.
 - **tests/** : quelques tests unitaires couvrant la configuration et l'intégration.
 
 ## Dépendances
@@ -48,6 +49,10 @@ Ces variables permettent de se connecter à Odoo et à l'API OpenAI.
 - Planifier un post dans Odoo :
   ```bash
   python schedule_post_in_odoo/schedule_facebook_post.py
+  ```
+- Mettre à jour automatiquement les catégories POS selon le jour :
+  ```bash
+  python pos_category_management/manage_pos_categories.py
   ```
 
 ## Exécution des tests
