@@ -29,6 +29,18 @@ def _deactivate_category(models, db, uid, password, name):
         models.execute_kw(db, uid, password, 'pos.category', 'write', [ids, {'active': False}])
 
 
+def fetch_all_categories(models, db, uid, password):
+    """Return all POS categories with their IDs."""
+    return models.execute_kw(
+        db,
+        uid,
+        password,
+        'pos.category',
+        'search_read',
+        [[], ['id', 'name']],
+    )
+
+
 def compute_category_actions(current_dt: datetime) -> Tuple[Iterable[str], Iterable[str]]:
     """Return categories to activate and deactivate for given datetime."""
     weekday = current_dt.weekday()
@@ -45,10 +57,15 @@ def update_pos_categories(current_dt: datetime | None = None):
     """Update POS categories according to the current day and time."""
     if current_dt is None:
         current_dt = datetime.now()
+    db, uid, password, models = get_odoo_connection()
+
+    try:
+        categories = fetch_all_categories(models, db, uid, password)
+        logger.info("Catégories POS existantes : %s", categories)
+    except Exception as err:
+        logger.error("Impossible de récupérer les catégories POS : %s", err)
 
     to_activate, to_deactivate = compute_category_actions(current_dt)
-
-    db, uid, password, models = get_odoo_connection()
 
     for name in to_activate:
         try:
