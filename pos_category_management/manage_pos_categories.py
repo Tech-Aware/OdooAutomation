@@ -39,7 +39,17 @@ def _ensure_category_active(models, db, uid, password, category_id):
                 [[config_ids[0]], {"iface_available_categ_ids": [(4, category_id)]}],
             )
 
-
+def fetch_all_categories(models, db, uid, password):
+    """Return all POS categories with their IDs."""
+    return models.execute_kw(
+        db,
+        uid,
+        password,
+        'pos.category',
+        'search_read',
+        [[], ['id', 'name']],
+    )
+  
 def _deactivate_category(models, db, uid, password, category_id):
     """Make the given category unavailable in the POS."""
     try:
@@ -70,7 +80,6 @@ def compute_category_actions(
     current_dt: datetime,
 ) -> tuple[list[int], list[int]]:
     """Return category IDs to activate and deactivate for given datetime."""
-    
     weekday = current_dt.weekday()
     hour = current_dt.hour
 
