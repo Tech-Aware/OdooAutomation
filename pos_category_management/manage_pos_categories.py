@@ -70,6 +70,7 @@ def compute_category_actions(
     current_dt: datetime,
 ) -> tuple[list[int], list[int]]:
     """Return category IDs to activate and deactivate for given datetime."""
+    
     weekday = current_dt.weekday()
     hour = current_dt.hour
 
@@ -85,10 +86,15 @@ def update_pos_categories(current_dt: datetime | None = None):
     """Update POS categories according to the current day and time."""
     if current_dt is None:
         current_dt = datetime.now()
+    db, uid, password, models = get_odoo_connection()
+
+    try:
+        categories = fetch_all_categories(models, db, uid, password)
+        logger.info("Catégories POS existantes : %s", categories)
+    except Exception as err:
+        logger.error("Impossible de récupérer les catégories POS : %s", err)
 
     to_activate, to_deactivate = compute_category_actions(current_dt)
-
-    db, uid, password, models = get_odoo_connection()
 
     for category_id in to_activate:
         try:
