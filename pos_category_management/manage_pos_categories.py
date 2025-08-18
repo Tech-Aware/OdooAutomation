@@ -6,8 +6,9 @@ from config.log_config import setup_logger
 
 logger = setup_logger()
 
-FRIDAY_CATEGORIES = ["BUVETTE", "EPICERIE"]
+FRIDAY_CATEGORIES = ["BUVETTE", "EPICERIE", "BUREAU"]
 SUNDAY_CATEGORY = "FOURNIL"
+SUNDAY_CATEGORIES = FRIDAY_CATEGORIES + [SUNDAY_CATEGORY]
 
 
 def _search_category(models, db, uid, password, name):
@@ -33,11 +34,11 @@ def compute_category_actions(current_dt: datetime) -> Tuple[Iterable[str], Itera
     weekday = current_dt.weekday()
     hour = current_dt.hour
 
-    if weekday == 4 and hour >= 18:  # Friday evening
+    if weekday == 4 and hour >= 6:  # Friday from 6 AM
         return FRIDAY_CATEGORIES, [SUNDAY_CATEGORY]
-    if weekday == 6:  # Sunday
-        return [SUNDAY_CATEGORY], FRIDAY_CATEGORIES
-    return [], FRIDAY_CATEGORIES + [SUNDAY_CATEGORY]
+    if weekday == 6 and hour >= 6:  # Sunday from 6 AM
+        return SUNDAY_CATEGORIES, []
+    return [], SUNDAY_CATEGORIES
 
 
 def update_pos_categories(current_dt: datetime | None = None):
