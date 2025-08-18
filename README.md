@@ -56,6 +56,30 @@ Ces variables permettent de se connecter à Odoo et à l'API OpenAI.
   ```
   Ce script active BUVETTE, EPICERIE et BUREAU le vendredi à partir de 6h, puis BUVETTE, EPICERIE, BUREAU et FOURNIL le dimanche à partir de 6h. Les autres jours, ces catégories sont désactivées.
 
+  Chaque catégorie POS possède aussi un **ID Odoo** utile pour les tests ou les vérifications manuelles. Voici les correspondances actuelles :
+
+  - BUVETTE : `79`
+  - EPICERIE : `72`
+  - BUREAU : `53`
+  - FOURNIL : `58`
+
+  Pour convertir les noms renvoyés par `compute_category_actions` en IDs :
+
+  ```python
+  from datetime import datetime
+  from pos_category_management.manage_pos_categories import compute_category_actions
+
+  CATEGORY_IDS = {"BUVETTE": 79, "EPICERIE": 72, "BUREAU": 53, "FOURNIL": 58}
+
+  add, remove = compute_category_actions(datetime(2024, 9, 6, 7))  # Vendredi 07h
+  add_ids = [CATEGORY_IDS[name] for name in add]
+  # add_ids == [79, 72, 53]
+
+  add, remove = compute_category_actions(datetime(2024, 9, 8, 10))  # Dimanche 10h
+  add_ids = [CATEGORY_IDS[name] for name in add]
+  # add_ids == [79, 72, 53, 58]
+  ```
+
 ## Exécution des tests
 
 Les tests utilisent `unittest` et se lancent avec :
