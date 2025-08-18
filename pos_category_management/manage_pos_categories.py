@@ -8,8 +8,8 @@ logger = setup_logger()
 # Category identifiers used for automatic activation/deactivation.
 # These values come from the Odoo database and therefore are integers
 # rather than category names.
-FRIDAY_CATEGORY_IDS: tuple[int, ...] = (79, 72, 53)
-SUNDAY_CATEGORY_IDS: tuple[int, ...] = FRIDAY_CATEGORY_IDS + (58,)
+FRIDAY_CATEGORY_IDS = [79, 72, 53]
+SUNDAY_CATEGORY_IDS = [79, 72, 53, 58]
 
 
 def _ensure_category_active(models, db, uid, password, category_id):
@@ -68,17 +68,17 @@ def _deactivate_category(models, db, uid, password, category_id):
 
 def compute_category_actions(
     current_dt: datetime,
-) -> tuple[tuple[int, ...], tuple[int, ...]]:
+) -> tuple[list[int], list[int]]:
     """Return category IDs to activate and deactivate for given datetime."""
     weekday = current_dt.weekday()
     hour = current_dt.hour
 
     if weekday == 4 and hour >= 6:  # Friday from 6 AM
         # Activate Friday categories and deactivate the Sunday-only one.
-        return FRIDAY_CATEGORY_IDS, (58,)
+        return FRIDAY_CATEGORY_IDS.copy(), [58]
     if weekday == 6 and hour >= 6:  # Sunday from 6 AM
-        return SUNDAY_CATEGORY_IDS, ()
-    return (), SUNDAY_CATEGORY_IDS
+        return SUNDAY_CATEGORY_IDS.copy(), []
+    return [], SUNDAY_CATEGORY_IDS.copy()
 
 
 def update_pos_categories(current_dt: datetime | None = None):
