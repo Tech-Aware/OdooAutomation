@@ -34,9 +34,13 @@ class FacebookService:
         self, message: str, image: Union[str, BytesIO, None] = None
     ) -> None:
         """Planifie un post sur la page Facebook principale."""
-        url = f"https://graph.facebook.com/{self.page_id}/photos"
-        data = {"caption": message, "access_token": self.page_token}
         files, fh = self._prepare_files(image)
+        if files:
+            url = f"https://graph.facebook.com/{self.page_id}/photos"
+            data = {"caption": message, "access_token": self.page_token}
+        else:
+            url = f"https://graph.facebook.com/{self.page_id}/feed"
+            data = {"message": message, "access_token": self.page_token}
         try:
             response = requests.post(url, data=data, files=files, timeout=10)
             response.raise_for_status()
@@ -55,9 +59,13 @@ class FacebookService:
     ) -> None:
         """Diffuse le message dans les groupes donnés."""
         for group in groups:
-            url = f"https://graph.facebook.com/{group}/photos"
-            data = {"caption": message, "access_token": self.page_token}
             files, fh = self._prepare_files(image)
+            if files:
+                url = f"https://graph.facebook.com/{group}/photos"
+                data = {"caption": message, "access_token": self.page_token}
+            else:
+                url = f"https://graph.facebook.com/{group}/feed"
+                data = {"message": message, "access_token": self.page_token}
             try:
                 response = requests.post(url, data=data, files=files, timeout=10)
                 response.raise_for_status()
