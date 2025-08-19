@@ -10,6 +10,12 @@ class FacebookService:
 
     def __init__(self, logger) -> None:
         self.logger = logger
+        if not config.FACEBOOK_PAGE_ID or not config.FACEBOOK_PAGE_TOKEN:
+            raise RuntimeError(
+                "FACEBOOK_PAGE_ID or FACEBOOK_PAGE_TOKEN is missing in config"
+            )
+        self.page_id = config.FACEBOOK_PAGE_ID
+        self.page_token = config.FACEBOOK_PAGE_TOKEN
 
     def _prepare_files(self, image: Union[str, BytesIO] | None):
         """Prépare les données de fichier pour l'API Facebook."""
@@ -25,15 +31,8 @@ class FacebookService:
         self, message: str, image: Union[str, BytesIO, None] = None
     ) -> None:
         """Planifie un post sur la page Facebook principale."""
-        page_id = getattr(config, "FACEBOOK_PAGE_ID", "")
-        page_token = getattr(config, "FACEBOOK_PAGE_TOKEN", "")
-        if not page_id or not page_token:
-            msg = "FACEBOOK_PAGE_ID or FACEBOOK_PAGE_TOKEN is missing in config"
-            self.logger.error(msg)
-            raise ValueError(msg)
-
-        url = f"https://graph.facebook.com/{page_id}/photos"
-        data = {"caption": message, "access_token": page_token}
+        url = f"https://graph.facebook.com/{self.page_id}/photos"
+        data = {"caption": message, "access_token": self.page_token}
         files, fh = self._prepare_files(image)
         try:
             response = requests.post(url, data=data, files=files, timeout=10)
@@ -51,15 +50,9 @@ class FacebookService:
         self, message: str, groups: List[str], image: Union[str, BytesIO, None] = None
     ) -> None:
         """Diffuse le message dans les groupes donnés."""
-        page_token = getattr(config, "FACEBOOK_PAGE_TOKEN", "")
-        if not page_token:
-            msg = "FACEBOOK_PAGE_TOKEN is missing in config"
-            self.logger.error(msg)
-            raise ValueError(msg)
-
         for group in groups:
             url = f"https://graph.facebook.com/{group}/photos"
-            data = {"caption": message, "access_token": page_token}
+            data = {"caption": message, "access_token": self.page_token}
             files, fh = self._prepare_files(image)
             try:
                 response = requests.post(url, data=data, files=files, timeout=10)
