@@ -1,11 +1,10 @@
-"""Workflow de publication basé sur un fichier audio.
+"""Workflow de publication basé sur un message vocal reçu via Telegram.
 
-Le script parcourt les fichiers présents dans ``audio_inputs`` et simule la
-création d'un post à partir de leur contenu. Les interactions utilisateurs sont
+Le script invite l'utilisateur à envoyer un message vocal et construit un post
+à partir de la transcription obtenue. Les interactions utilisateurs sont
 réalisées via la console pour simplifier l'exemple.
 """
 
-from services.audio_service import AudioService
 from services.openai_service import OpenAIService
 from services.telegram_service import TelegramService
 from services.facebook_service import FacebookService
@@ -15,16 +14,16 @@ from config.log_config import setup_logger
 def main() -> None:
     logger = setup_logger()
 
-    audio_service = AudioService(logger)
     openai_service = OpenAIService(logger)
-    telegram_service = TelegramService(logger)
+    telegram_service = TelegramService(logger, openai_service)
     facebook_service = FacebookService(logger)
 
+    telegram_service.send_message("Il est temps de publier Kevin")
+
     while True:
-        result = audio_service.get_transcribed_text()
-        if not result:
+        text = telegram_service.wait_for_voice_message()
+        if not text:
             break
-        text, file_path = result
 
         try:
             versions = openai_service.generate_post_versions(text)
@@ -48,8 +47,6 @@ def main() -> None:
             logger.info("Publication terminée avec succès.")
         except Exception as err:  # pragma: no cover - log then continue
             logger.error(f"Erreur lors du traitement : {err}")
-        finally:
-            audio_service.delete_file(file_path)
 
 
 if __name__ == "__main__":
