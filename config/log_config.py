@@ -4,12 +4,18 @@ import logging
 import os
 import sys
 
-def setup_logger():
+
+def setup_logger(name: str = "odoo_automation"):
     """
     Initialise et configure un logger qui écrit les messages dans un fichier log (UTF-8)
     et les affiche aussi dans la console (UTF-8 si supporté).
     Le logger permet de tracer tout ce qui se passe dans le script.
     En cas d'erreur lors de la configuration, une exception est levée.
+
+    Parameters
+    ----------
+    name: str
+        Nom du logger à initialiser, généralement ``__name__``.
     """
     try:
         log_file = "odoo_automation.log"  # Nom du fichier log
@@ -19,7 +25,7 @@ def setup_logger():
         # os.makedirs(logs_dir, exist_ok=True)
         # log_file = os.path.join(logs_dir, "odoo_automation.log")
 
-        logger = logging.getLogger("odoo_automation")
+        logger = logging.getLogger(name)
         logger.setLevel(logging.DEBUG)  # Capture tout (DEBUG et au-dessus)
 
         # Pour éviter plusieurs handlers si la fonction est appelée plusieurs fois
@@ -33,7 +39,9 @@ def setup_logger():
                 stream_handler = logging.StreamHandler(stream=sys.stdout)
                 stream_handler.setLevel(logging.INFO)
 
-                formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+                formatter = logging.Formatter(
+                    '%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d %(funcName)s - %(message)s'
+                )
                 file_handler.setFormatter(formatter)
                 stream_handler.setFormatter(formatter)
 
