@@ -1,3 +1,4 @@
+import base64
 from io import BytesIO
 from unittest.mock import MagicMock, patch
 
@@ -51,7 +52,32 @@ def test_generate_post_versions(monkeypatch):
     assert "versions DISTINCTES" in prompt
 
 @patch("services.openai_service.OpenAI")
-def test_generate_illustrations_returns_bytesio(mock_client):
+def test_generate_illustrations_returns_bytesio(mock_openai):
+    mock_client = MagicMock()
+    mock_openai.return_value = mock_client
+    mock_client.images.generate.return_value = type(
+        "Resp",
+        (),
+        {
+            "data": [
+                type(
+                    "Data",
+                    (),
+                    {
+                        "b64_json": base64.b64encode(b"img1").decode("utf-8")
+                    },
+                )(),
+                type(
+                    "Data",
+                    (),
+                    {
+                        "b64_json": base64.b64encode(b"img2").decode("utf-8")
+                    },
+                )(),
+            ]
+        },
+    )()
+
     service = OpenAIService(MagicMock())
     images = service.generate_illustrations("prompt")
     assert len(images) == 2

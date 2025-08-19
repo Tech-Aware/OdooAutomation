@@ -23,7 +23,7 @@ def test_ask_image_returns_selected_image(mock_app):
     images = [BytesIO(b"a"), BytesIO(b"b")]
 
     async def runner():
-        task = asyncio.create_task(service._ask_images(images))
+        task = asyncio.create_task(service._ask_images("prompt", images))
         await asyncio.sleep(0)
         service._callback_future.set_result("1")
         return await task
@@ -31,4 +31,5 @@ def test_ask_image_returns_selected_image(mock_app):
     result = loop.run_until_complete(runner())
     assert result is images[1]
     assert app.bot.send_photo.await_count == 2
+    assert app.bot.send_message.await_count == 1
     loop.close()
