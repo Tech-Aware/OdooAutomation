@@ -1,0 +1,48 @@
+from services.openai_service import OpenAIService
+
+
+class DummyLogger:
+    def error(self, msg):
+        pass
+
+
+class DummyCompletions:
+    def __init__(self):
+        self.called_with = None
+
+    def create(self, **kwargs):
+        self.called_with = kwargs
+        response = type(
+            "Response",
+            (),
+            {
+                "choices": [
+                    type(
+                        "Choice",
+                        (),
+                        {
+                            "message": type("Msg", (), {"content": "A---B---C"})()
+                        },
+                    )()
+                ]
+            },
+        )
+        return response
+
+
+class DummyClient:
+    def __init__(self):
+        self.chat = type("Chat", (), {"completions": DummyCompletions()})()
+
+
+def test_generate_post_versions(monkeypatch):
+    dummy_client = DummyClient()
+    monkeypatch.setattr("services.openai_service.OpenAI", lambda: dummy_client)
+    service = OpenAIService(DummyLogger())
+
+    versions = service.generate_post_versions("Mon post")
+
+    assert versions == ["A", "B", "C"]
+    assert dummy_client.chat.completions.called_with["temperature"] >= 1.0
+    prompt = dummy_client.chat.completions.called_with["messages"][0]["content"]
+    assert "versions DISTINCTES" in prompt
