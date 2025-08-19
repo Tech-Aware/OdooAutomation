@@ -58,10 +58,18 @@ class FacebookService:
             self.logger.info(f"Facebook page response: {response.text}")
             return response.json()
         except Exception as e:
+            response = getattr(e, "response", None)
+            if response is not None:
+                try:
+                    error_detail = response.json()
+                except ValueError:
+                    error_detail = response.text
+            else:
+                error_detail = str(e)
             self.logger.exception(
-                f"Erreur lors de la publication sur la page Facebook : {e}"
+                f"Erreur lors de la publication sur la page Facebook : {error_detail}"
             )
-            return None
+            raise requests.HTTPError(response=response) from e
         finally:
             if fh:
                 fh.close()
