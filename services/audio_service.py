@@ -31,7 +31,7 @@ class AudioService:
             self.logger.info(f"Fichier audio transcrit : {file_path}")
             return text, file_path
         except Exception as err:  # pragma: no cover - log then ignore
-            self.logger.error(f"Erreur lors de la transcription audio : {err}")
+            self.logger.exception(f"Erreur lors de la transcription audio : {err}")
             return None
 
     def delete_file(self, file_path: str) -> None:
@@ -42,6 +42,6 @@ class AudioService:
             os.remove(file_path)
             self.logger.info(f"Fichier supprimé : {file_path}")
         except OSError as err:  # pragma: no cover - log then ignore
-            self.logger.error(
+            self.logger.exception(
                 f"Erreur lors de la suppression du fichier {file_path}: {err}"
             )

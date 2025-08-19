@@ -45,7 +45,7 @@ def chat_gpt(prompt, model="gpt-4.1", system_prompt=prompt_system):
         logger.info("Réponse OpenAI reçue avec succès.")
         return content
     except Exception as e:
-        logger.error(f"Erreur lors de l'appel OpenAI : {e}")
+        logger.exception(f"Erreur lors de l'appel OpenAI : {e}")
         return None
 
 
@@ -88,7 +88,7 @@ def generate_illustrations(prompt_text):
                 urls.append(url)
         return urls
     except Exception as e:
-        logger.error(f"Erreur lors de la génération d'images : {e}")
+        logger.exception(f"Erreur lors de la génération d'images : {e}")
         return []
 
 # --- Audio transcription utilities -------------------------------------------------
@@ -146,7 +146,7 @@ def transcribe_audio(path: str) -> Optional[str]:
 
         return text
     except Exception as e:
-        logger.error(f"Erreur lors de la transcription audio : {e}")
+        logger.exception(f"Erreur lors de la transcription audio : {e}")
         return None
 
 
