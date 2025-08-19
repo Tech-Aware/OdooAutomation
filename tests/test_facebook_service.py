@@ -1,5 +1,9 @@
 import logging
 from unittest.mock import Mock, mock_open, patch
+import pytest
+import requests
+from io import BytesIO
+from unittest.mock import MagicMock, patch
 
 import config
 from services.facebook_service import FacebookService
@@ -7,6 +11,52 @@ from services.facebook_service import FacebookService
 
 @patch.object(config, "FACEBOOK_PAGE_ID", "123")
 @patch.object(config, "PAGE_ACCESS_TOKEN", "token")
+class FacebookServiceTests(unittest.TestCase):
+    @patch.object(config, "FACEBOOK_PAGE_ID", "123")
+    @patch.object(config, "PAGE_ACCESS_TOKEN", "token")
+    @patch("services.facebook_service.requests.post")
+    def test_post_without_image_uses_feed(self, mock_post, *_):
+        mock_response = Mock()
+        mock_response.raise_for_status = Mock()
+        mock_response.text = "ok"
+        mock_post.return_value = mock_response
+
+        service = FacebookService(logger=logging.getLogger("test"))
+        service.post_to_facebook_page("hello world")
+
+        mock_post.assert_called_once_with(
+            "https://graph.facebook.com/123/feed",
+            data={"message": "hello world", "access_token": "token"},
+            timeout=10,
+        )
+
+    @patch.object(config, "FACEBOOK_PAGE_ID", "123")
+    @patch.object(config, "PAGE_ACCESS_TOKEN", "token")
+    @patch("builtins.open", new_callable=mock_open)
+    @patch("services.facebook_service.requests.post")
+    def test_post_with_image_uses_photos_and_closes_file(self, mock_post, mock_file, *_):
+        mock_response = Mock()
+        mock_response.raise_for_status = Mock()
+        mock_response.text = "ok"
+        mock_post.return_value = mock_response
+
+        service = FacebookService(logger=logging.getLogger("test"))
+        service.post_to_facebook_page("hello", "image.jpg")
+
+        file_handle = mock_file.return_value
+        expected_files = {"source": file_handle}
+        mock_post.assert_called_once_with(
+            "https://graph.facebook.com/123/photos",
+            data={"caption": "hello", "access_token": "token"},
+            files=expected_files,
+            timeout=10,
+        )
+        mock_file.assert_called_once_with("image.jpg", "rb")
+        file_handle.close.assert_called_once()
+
+
+if __name__ == "__main__":
+    unittest.main()
 @patch("services.facebook_service.requests.post")
 def test_post_without_image_uses_feed(mock_post):
     mock_response = Mock()
@@ -50,3 +100,26 @@ def test_post_with_image_uses_photos_and_closes_file(mock_post, mock_file):
     mock_file.assert_called_once_with("image.jpg", "rb")
     file_handle.close.assert_called_once()
 
+    assert "files" in kwargs
+    assert "source" in kwargs["files"]
+
+
+@patch("services.facebook_service.requests.post")
+def test_post_to_page_logs_api_error(mock_post, monkeypatch, caplog):
+    monkeypatch.setattr(config, "FACEBOOK_PAGE_ID", "123")
+    monkeypatch.setattr(config, "PAGE_ACCESS_TOKEN", "token")
+
+    logger = logging.getLogger("test")
+    service = FacebookService(logger)
+
+    response = MagicMock()
+    response.json.return_value = {"error": "bad request"}
+    response.text = "{\"error\": \"bad request\"}"
+    http_error = requests.HTTPError(response=response)
+    response.raise_for_status.side_effect = http_error
+    mock_post.return_value = response
+
+    with caplog.at_level(logging.ERROR), pytest.raises(requests.HTTPError):
+        service.post_to_facebook_page("hello")
+
+    assert "bad request" in caplog.text
