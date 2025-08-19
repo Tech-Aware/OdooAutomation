@@ -1,6 +1,5 @@
 import base64
 from io import BytesIO
-from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import openai
@@ -88,14 +87,9 @@ def test_generate_illustrations_returns_bytesio(mock_openai):
 
 @patch("services.openai_service.OpenAI")
 def test_generate_illustrations_invalid_request(mock_openai):
-    class DummyInvalidRequestError(Exception):
-        pass
-
-    openai.error = SimpleNamespace(InvalidRequestError=DummyInvalidRequestError)
-
     mock_client = MagicMock()
     mock_openai.return_value = mock_client
-    mock_client.images.generate.side_effect = DummyInvalidRequestError("bad request")
+    mock_client.images.generate.side_effect = openai.OpenAIError("bad request")
 
     service = OpenAIService(MagicMock())
     result = service.generate_illustrations("prompt")
