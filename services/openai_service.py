@@ -60,7 +60,7 @@ class OpenAIService:
                 img_stream = BytesIO(base64.b64decode(data.b64_json))
                 images.append(img_stream)
             return images
-        except openai.OpenAIError as err:
+        except OpenAIError as err:
 
             self.logger.exception(f"Erreur de génération d’images : {err}")
             return []
