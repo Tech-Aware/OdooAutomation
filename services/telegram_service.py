@@ -109,7 +109,7 @@ class TelegramService:
         mapping = {str(i): opt for i, opt in enumerate(options)}
         keyboard = [
             [InlineKeyboardButton(opt, callback_data=str(i))]
-            for i, opt in mapping.items()
+            for i, opt in enumerate(options)
         ]
         await self.app.bot.send_message(
             chat_id=self.allowed_user_id,
@@ -150,19 +150,18 @@ class TelegramService:
         await self.app.bot.send_message(
             chat_id=self.allowed_user_id, text=prompt
         )
-        for key, img in mapping.items():
+        for i, img in mapping.items():
             img.seek(0)
-            file = InputFile(img, filename=f"illustration_{key}.png")
             keyboard = InlineKeyboardMarkup(
-                [[InlineKeyboardButton("Choisir", callback_data=key)]]
+                [[InlineKeyboardButton("Choisir", callback_data=i)]]
             )
             await self.app.bot.send_photo(
                 chat_id=self.allowed_user_id,
-                photo=file,
+                photo=InputFile(img, filename=f"illustration_{i}.png"),
                 reply_markup=keyboard,
             )
-        answer = await self._callback_future
-        return mapping[answer]
+        answer_key = await self._callback_future
+        return mapping[answer_key]
 
     def ask_image(self, prompt: str, images: List[BytesIO]) -> BytesIO:
         """Demande à l'utilisateur de choisir une image parmi celles fournies."""
