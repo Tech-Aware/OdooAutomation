@@ -44,12 +44,12 @@ class OpenAIService:
                 prompt=text,
                 size="1024x1024",
                 n=2,
-                response_format="b64_json",
             )
 
             images: List[BytesIO] = []
             for data in response.data:
-                images.append(BytesIO(base64.b64decode(data.b64_json)))
+                img_stream = BytesIO(base64.b64decode(data.b64_json))
+                images.append(img_stream)
             return images
         except Exception as err:  # pragma: no cover - log then ignore
             self.logger.error(
