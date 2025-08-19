@@ -28,9 +28,7 @@ class TelegramService:
                 filters.VOICE & filters.User(self.allowed_user_id), self._voice_handler
             )
         )
-        self.app.add_handler(
-            CallbackQueryHandler(self._callback_handler, filters.User(self.allowed_user_id))
-        )
+        self.app.add_handler(CallbackQueryHandler(self._callback_handler))
         self.loop: asyncio.AbstractEventLoop | None = None
         self._voice_future: asyncio.Future[str] | None = None
         self._callback_future: asyncio.Future[str] | None = None
