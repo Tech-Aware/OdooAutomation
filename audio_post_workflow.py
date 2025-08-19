@@ -10,9 +10,10 @@ from services.openai_service import OpenAIService
 import asyncio
 from services.telegram_service import TelegramService
 from services.facebook_service import FacebookService
-from config.log_config import setup_logger
+from config.log_config import setup_logger, log_execution
 
 
+@log_execution
 def main() -> None:
     logger = setup_logger()
 

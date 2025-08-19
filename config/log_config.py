@@ -3,6 +3,9 @@
 import logging
 import os
 import sys
+import inspect
+import asyncio
+from functools import wraps
 
 
 def setup_logger(name: str = "odoo_automation"):
@@ -57,3 +60,53 @@ def setup_logger(name: str = "odoo_automation"):
     except Exception as e:
         sys.stderr.write(f"Impossible d'initialiser le logger : {e}\n")
         raise
+
+
+def log_execution(func):
+    """Decorator logging function entry and exit with location information."""
+
+    async def _log_async(*args, **kwargs):
+        logger = logging.getLogger("odoo_automation")
+        cls_name = None
+        if args:
+            obj = args[0]
+            if hasattr(obj, func.__name__):
+                cls_name = obj.__class__.__name__
+        source_file = inspect.getsourcefile(func) or "<unknown>"
+        line_no = inspect.getsourcelines(func)[1]
+        name = f"{cls_name + '.' if cls_name else ''}{func.__name__}"
+        logger.info(f"Starting {name} ({source_file}:{line_no})")
+        try:
+            return await func(*args, **kwargs)
+        finally:
+            logger.info(f"Completed {name} ({source_file}:{line_no})")
+
+    def _log_sync(*args, **kwargs):
+        logger = logging.getLogger("odoo_automation")
+        cls_name = None
+        if args:
+            obj = args[0]
+            if hasattr(obj, func.__name__):
+                cls_name = obj.__class__.__name__
+        source_file = inspect.getsourcefile(func) or "<unknown>"
+        line_no = inspect.getsourcelines(func)[1]
+        name = f"{cls_name + '.' if cls_name else ''}{func.__name__}"
+        logger.info(f"Starting {name} ({source_file}:{line_no})")
+        try:
+            return func(*args, **kwargs)
+        finally:
+            logger.info(f"Completed {name} ({source_file}:{line_no})")
+
+    if asyncio.iscoroutinefunction(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            return await _log_async(*args, **kwargs)
+
+        return wrapper
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return _log_sync(*args, **kwargs)
+
+    return wrapper
+

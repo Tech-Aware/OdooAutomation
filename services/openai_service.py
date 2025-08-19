@@ -5,6 +5,7 @@ from typing import List
 
 import openai
 from openai import OpenAI
+from config.log_config import log_execution
 
 
 class OpenAIService:
@@ -12,10 +13,12 @@ class OpenAIService:
 
     IMAGE_MODEL = os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-1")
 
+    @log_execution
     def __init__(self, logger) -> None:
         self.logger = logger
         self.client = OpenAI()
 
+    @log_execution
     def generate_post_versions(self, text: str) -> List[str]:
         """Génère plusieurs versions d'un message."""
         prompt = (
@@ -37,6 +40,7 @@ class OpenAIService:
             )
             return []
 
+    @log_execution
     def generate_illustrations(self, prompt: str) -> List[BytesIO]:
         """Génère une liste d'illustrations en mémoire.
 
@@ -66,6 +70,7 @@ class OpenAIService:
             )
             return []
 
+    @log_execution
     def transcribe_audio(self, audio_data: bytes) -> str:
         """Transcrit un contenu audio en texte via le modèle Whisper."""
 

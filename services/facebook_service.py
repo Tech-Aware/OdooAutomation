@@ -3,11 +3,13 @@ from io import BytesIO
 
 import config
 import requests
+from config.log_config import log_execution
 
 
 class FacebookService:
     """Service simulant la publication sur Facebook."""
 
+    @log_execution
     def __init__(self, logger) -> None:
         self.logger = logger
         if not config.FACEBOOK_PAGE_ID or not config.PAGE_ACCESS_TOKEN:
@@ -27,6 +29,7 @@ class FacebookService:
             return {"source": fh}, fh
         return None, None
 
+    @log_execution
     def post_to_facebook_page(
         self, message: str, image: Union[str, BytesIO, None] = None
     ) -> None:
@@ -46,6 +49,7 @@ class FacebookService:
             if fh:
                 fh.close()
 
+    @log_execution
     def cross_post_to_groups(
         self, message: str, groups: List[str], image: Union[str, BytesIO, None] = None
     ) -> None:
