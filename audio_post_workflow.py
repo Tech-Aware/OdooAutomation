@@ -2,7 +2,8 @@
 
 Le script invite l'utilisateur à envoyer un message vocal et construit un post
 à partir de la transcription obtenue. Les interactions utilisateurs sont
-réalisées directement via un bot Telegram.
+désormais réalisées via un véritable bot Telegram.
+
 """
 
 from services.openai_service import OpenAIService
@@ -16,6 +17,8 @@ def main() -> None:
     logger = setup_logger()
 
     openai_service = OpenAIService(logger)
+    telegram_service = TelegramService(logger, openai_service)
+    telegram_service.start()
     facebook_service = FacebookService(logger)
 
     asyncio.run(telegram_service.send_message("Il est temps de publier Kevin"))
