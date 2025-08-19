@@ -31,5 +31,5 @@ TELEGRAM_USER_ID = int(os.getenv("TELEGRAM_USER_ID", "0"))
 
 # --- Facebook configuration ---------------------------------------------------
 # Required by the Facebook posting utilities to publish on a page.
-FACEBOOK_PAGE_ID = os.getenv("APP_ID", "")
+FACEBOOK_PAGE_ID = os.getenv("FACEBOOK_PAGE_ID", "")
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN", "")
