@@ -49,11 +49,11 @@ def setup_logger(name: str = "odoo_automation"):
                 logger.addHandler(stream_handler)
 
             except Exception as handler_error:
-                print(f"Erreur lors de la création des handlers de log : {handler_error}")
+                sys.stderr.write(f"Erreur lors de la création des handlers de log : {handler_error}\n")
                 raise
 
         return logger
 
     except Exception as e:
-        print(f"Impossible d'initialiser le logger : {e}")
+        sys.stderr.write(f"Impossible d'initialiser le logger : {e}\n")
         raise
