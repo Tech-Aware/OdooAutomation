@@ -1,12 +1,16 @@
 import base64
+import os
 from io import BytesIO
 from typing import List
 
+import openai
 from openai import OpenAI
 
 
 class OpenAIService:
     """Service simulant les appels à l'API OpenAI."""
+
+    IMAGE_MODEL = os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-1")
 
     def __init__(self, logger) -> None:
         self.logger = logger
@@ -31,7 +35,7 @@ class OpenAIService:
             self.logger.error(f"Erreur lors de la génération des versions : {err}")
             return []
 
-    def generate_illustrations(self, text: str) -> List[BytesIO]:
+    def generate_illustrations(self, prompt: str) -> List[BytesIO]:
         """Génère une liste d'illustrations en mémoire.
 
         Les images renvoyées par l'API sont décodées depuis du base64 et
@@ -40,8 +44,8 @@ class OpenAIService:
 
         try:
             response = self.client.images.generate(
-                model="gpt-image-1",
-                prompt=text,
+                model=self.IMAGE_MODEL,
+                prompt=prompt,
                 size="1024x1024",
                 n=2,
             )
@@ -51,6 +55,9 @@ class OpenAIService:
                 img_stream = BytesIO(base64.b64decode(data.b64_json))
                 images.append(img_stream)
             return images
+        except openai.error.InvalidRequestError as err:
+            self.logger.error(f"Erreur de génération d’images : {err}")
+            return []
         except Exception as err:  # pragma: no cover - log then ignore
             self.logger.error(
                 f"Erreur lors de la génération des illustrations : {err}"
