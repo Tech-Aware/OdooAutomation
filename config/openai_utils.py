@@ -1,24 +1,20 @@
 # config/openai_utils.py
 
 import openai
-from dotenv import load_dotenv
 import os
 from typing import Optional
 
 from .log_config import setup_logger  # Import du setup_logger depuis le même dossier
+from . import OPENAI_API_KEY
 
 # Initialise le logger via la config centrale
 logger = setup_logger()
 
-# Charge les variables d’environnement du .env
-load_dotenv(override=True)
-
-# Récupère la clé API
-api_key = os.getenv("OPENAI_API_KEY")
-if not api_key:
+# Configure the OpenAI client using the key provided in config
+if not OPENAI_API_KEY:
     logger.error("Clé API OpenAI manquante dans le fichier .env")
 else:
-    openai.api_key = api_key
+    openai.api_key = OPENAI_API_KEY
 
 # Obtenir le chemin du dossier parent
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

@@ -1,16 +1,16 @@
-import os
 import json
 from urllib import request, parse
-from dotenv import load_dotenv
-from config.log_config import setup_logger
 
-load_dotenv(override=True)
+import config
+from config.log_config import setup_logger
 
 logger = setup_logger()
 GRAPH_API_URL = "https://graph.facebook.com"
 
-PAGE_ID = os.getenv("FB_PAGE_ID")
-ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
+# Retrieve credentials from the central configuration
+PAGE_ID = config.FACEBOOK_PAGE_ID
+ACCESS_TOKEN = config.FACEBOOK_PAGE_TOKEN
+
 
 def _post(url, data):
     encoded = parse.urlencode(data).encode()

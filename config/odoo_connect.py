@@ -1,9 +1,8 @@
 # config/odoo_connect.py
 
-import os
-from dotenv import load_dotenv
 from config.log_config import setup_logger
 from config.auth import authenticate_odoo
+from config import ODOO_URL, ODOO_DB, ODOO_USER, ODOO_PASSWORD
 
 
 class FakeModels:
@@ -75,12 +74,11 @@ def get_odoo_connection():
     logger.info("Démarrage de l'initialisation de la connexion à Odoo.")
 
     try:
-        # Charger les variables d'environnement depuis .env
-        load_dotenv()
-        url = os.getenv('ODOO_URL', 'https://example.com')
-        db = os.getenv('ODOO_DB', 'db')
-        username = os.getenv('ODOO_USER', 'user')
-        password = os.getenv('ODOO_PASSWORD', 'password')
+        # Retrieve connection settings from the central config
+        url = ODOO_URL or "https://example.com"
+        db = ODOO_DB or "db"
+        username = ODOO_USER or "user"
+        password = ODOO_PASSWORD or "password"
 
         logger.debug(f"Variables d'environnement récupérées : URL={url}, DB={db}, USER={username}")
 
