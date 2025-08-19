@@ -36,9 +36,11 @@ ODOO_URL=<url de votre instance Odoo>
 ODOO_DB=<base de données>
 ODOO_USER=<utilisateur>
 ODOO_PASSWORD=<mot de passe>
+TELEGRAM_BOT_TOKEN=<token du bot Telegram>
+TELEGRAM_USER_ID=<identifiant Telegram du destinataire>
 ```
 
-Ces variables permettent de se connecter à Odoo et à l'API OpenAI.
+Ces variables permettent de se connecter à Odoo, à l'API OpenAI et à Telegram pour l'envoi de notifications. `TELEGRAM_BOT_TOKEN` et `TELEGRAM_USER_ID` sont utilisés par `telegram_service.py` pour envoyer des messages.
 
 ## Utilisation principale
 
