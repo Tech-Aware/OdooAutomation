@@ -32,19 +32,29 @@ class FacebookService:
     @log_execution
     def post_to_facebook_page(
         self, message: str, image: Union[str, BytesIO, None] = None
-    ) -> None:
+    ) -> dict | None:
         """Planifie un post sur la page Facebook principale."""
-        url = f"https://graph.facebook.com/{self.page_id}/photos"
-        data = {"caption": message, "access_token": self.page_token}
         files, fh = self._prepare_files(image)
+
+        if files:
+            url = f"https://graph.facebook.com/{self.page_id}/photos"
+            data = {"caption": message, "access_token": self.page_token}
+            request_kwargs = {"data": data, "files": files, "timeout": 10}
+        else:
+            url = f"https://graph.facebook.com/{self.page_id}/feed"
+            data = {"message": message, "access_token": self.page_token}
+            request_kwargs = {"data": data, "timeout": 10}
+
         try:
-            response = requests.post(url, data=data, files=files, timeout=10)
+            response = requests.post(url, **request_kwargs)
             response.raise_for_status()
             self.logger.info(f"Facebook page response: {response.text}")
+            return response.json()
         except Exception as e:
             self.logger.exception(
                 f"Erreur lors de la publication sur la page Facebook : {e}"
             )
+            return None
         finally:
             if fh:
                 fh.close()
