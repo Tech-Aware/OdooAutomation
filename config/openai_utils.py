@@ -50,3 +50,46 @@ def chat_gpt(prompt, model="gpt-4.1", system_prompt=prompt_system):
     except Exception as e:
         logger.error(f"Erreur lors de l'appel OpenAI : {e}")
         return None
+
+
+def generate_post_versions(text, model="gpt-4o-mini"):
+    """Génère trois versions alternatives d'un texte donné.
+
+    Args:
+        text: Le texte source à transformer.
+        model: Le modèle OpenAI à utiliser.
+
+    Returns:
+        Une liste contenant jusqu'à trois versions du texte.
+    """
+    prompt = (
+        "Propose trois versions différentes du texte suivant. "
+        "Sépare chaque version par une nouvelle ligne :\n"
+        f"{text}"
+    )
+    response = chat_gpt(prompt, model=model)
+    if not response:
+        return []
+    versions = [line.strip(" -\t") for line in response.splitlines() if line.strip()]
+    return versions[:3]
+
+
+def generate_illustrations(prompt_text):
+    """Génère trois illustrations à partir d'un prompt texte."""
+    try:
+        logger.info(f"Génération d'illustrations : {prompt_text}")
+        response = openai.images.generate(
+            model="dall-e-3",
+            prompt=prompt_text,
+            n=3,
+            size="1024x1024"
+        )
+        urls = []
+        for data in response.data:
+            url = data.get("url") if isinstance(data, dict) else getattr(data, "url", None)
+            if url:
+                urls.append(url)
+        return urls
+    except Exception as e:
+        logger.error(f"Erreur lors de la génération d'images : {e}")
+        return []
