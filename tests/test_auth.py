@@ -1,17 +1,15 @@
 # tests/test_auth.py
 
 import unittest
-import os
-from dotenv import load_dotenv
+import config
 from config.auth import authenticate_odoo
 
 class TestAuthOdoo(unittest.TestCase):
     def setUp(self):
-        load_dotenv()
-        self.url = os.getenv('ODOO_URL')
-        self.db = os.getenv('ODOO_DB')
-        self.username = os.getenv('ODOO_USER')
-        self.password = os.getenv('ODOO_PASSWORD')
+        self.url = config.ODOO_URL
+        self.db = config.ODOO_DB
+        self.username = config.ODOO_USER
+        self.password = config.ODOO_PASSWORD
 
     def test_authenticate_success(self):
         uid = authenticate_odoo(self.url, self.db, self.username, self.password)
