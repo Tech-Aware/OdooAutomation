@@ -18,5 +18,5 @@ def load_group_data(file_name="group_data.json"):
         logger.info(f"Données de groupe chargées depuis {file_path}.")
         return data
     except Exception as e:
-        logger.error(f"Erreur lors du chargement des données de groupe : {e}")
+        logger.exception(f"Erreur lors du chargement des données de groupe : {e}")
         return {}

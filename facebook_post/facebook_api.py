@@ -3,6 +3,7 @@ from urllib import request, parse
 
 import config
 from config.log_config import setup_logger
+from config.log_config import log_execution
 
 logger = setup_logger(__name__)
 GRAPH_API_URL = "https://graph.facebook.com"
@@ -32,6 +33,7 @@ def _upload_image_to_page(image_url):
     logger.info(f"Image uploaded with media_fbid {media_id}")
     return media_id
 
+@log_execution
 def post_to_facebook_page(message, image_url=None):
     """Post a message to the Facebook page and return its post_id."""
     url = f"{GRAPH_API_URL}/{PAGE_ID}/feed"
@@ -47,6 +49,7 @@ def post_to_facebook_page(message, image_url=None):
     logger.info(f"Post published with id {post_id}")
     return post_id
 
+@log_execution
 def cross_post_to_groups(post_id, group_ids):
     """Cross-post an existing page post to multiple Facebook groups."""
     results = []

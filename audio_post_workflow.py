@@ -10,9 +10,10 @@ from services.openai_service import OpenAIService
 import asyncio
 from services.telegram_service import TelegramService
 from services.facebook_service import FacebookService
-from config.log_config import setup_logger
+from config.log_config import setup_logger, log_execution
 
 
+@log_execution
 def main() -> None:
     logger = setup_logger(__name__)
 
@@ -22,7 +23,7 @@ def main() -> None:
     try:
         facebook_service = FacebookService(logger)
     except RuntimeError as err:
-        logger.error(f"Initialisation du service Facebook échouée : {err}")
+        logger.exception(f"Initialisation du service Facebook échouée : {err}")
         telegram_service.send_message(str(err))
         return
 
@@ -60,7 +61,7 @@ def main() -> None:
 
             logger.info("Publication terminée avec succès.")
         except Exception as err:  # pragma: no cover - log then continue
-            logger.error(f"Erreur lors du traitement : {err}")
+            logger.exception(f"Erreur lors du traitement : {err}")
 
 
 if __name__ == "__main__":

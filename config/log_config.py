@@ -2,6 +2,9 @@
 
 import logging
 import sys
+import inspect
+import asyncio
+from functools import wraps
 
 
 def setup_logger(name: str) -> logging.Logger:
@@ -9,6 +12,7 @@ def setup_logger(name: str) -> logging.Logger:
 
     Les messages sont écrits dans un fichier log (UTF-8) et affichés dans la
     console. Le format inclut le nom du module pour faciliter le suivi.
+
     """
     try:
         log_file = "odoo_automation.log"  # Nom du fichier log
@@ -33,7 +37,7 @@ def setup_logger(name: str) -> logging.Logger:
                 stream_handler.setLevel(logging.INFO)
 
                 formatter = logging.Formatter(
-                    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+                    '%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d %(funcName)s - %(message)s'
                 )
                 file_handler.setFormatter(formatter)
                 stream_handler.setFormatter(formatter)
@@ -43,13 +47,62 @@ def setup_logger(name: str) -> logging.Logger:
                 root_logger.addHandler(stream_handler)
 
             except Exception as handler_error:
-                print(
-                    f"Erreur lors de la création des handlers de log : {handler_error}"
-                )
+
+                sys.stderr.write(f"Erreur lors de la création des handlers de log : {handler_error}\n")
                 raise
 
         return logger
 
     except Exception as e:
-        print(f"Impossible d'initialiser le logger : {e}")
+        sys.stderr.write(f"Impossible d'initialiser le logger : {e}\n")
         raise
+
+
+def log_execution(func):
+    """Decorator logging function entry and exit with location information."""
+
+    async def _log_async(*args, **kwargs):
+        logger = logging.getLogger("odoo_automation")
+        cls_name = None
+        if args:
+            obj = args[0]
+            if hasattr(obj, func.__name__):
+                cls_name = obj.__class__.__name__
+        source_file = inspect.getsourcefile(func) or "<unknown>"
+        line_no = inspect.getsourcelines(func)[1]
+        name = f"{cls_name + '.' if cls_name else ''}{func.__name__}"
+        logger.info(f"Starting {name} ({source_file}:{line_no})")
+        try:
+            return await func(*args, **kwargs)
+        finally:
+            logger.info(f"Completed {name} ({source_file}:{line_no})")
+
+    def _log_sync(*args, **kwargs):
+        logger = logging.getLogger("odoo_automation")
+        cls_name = None
+        if args:
+            obj = args[0]
+            if hasattr(obj, func.__name__):
+                cls_name = obj.__class__.__name__
+        source_file = inspect.getsourcefile(func) or "<unknown>"
+        line_no = inspect.getsourcelines(func)[1]
+        name = f"{cls_name + '.' if cls_name else ''}{func.__name__}"
+        logger.info(f"Starting {name} ({source_file}:{line_no})")
+        try:
+            return func(*args, **kwargs)
+        finally:
+            logger.info(f"Completed {name} ({source_file}:{line_no})")
+
+    if asyncio.iscoroutinefunction(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            return await _log_async(*args, **kwargs)
+
+        return wrapper
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return _log_sync(*args, **kwargs)
+
+    return wrapper
+
