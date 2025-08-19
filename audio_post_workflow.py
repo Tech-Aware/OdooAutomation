@@ -19,7 +19,12 @@ def main() -> None:
     openai_service = OpenAIService(logger)
     telegram_service = TelegramService(logger, openai_service)
     telegram_service.start()
-    facebook_service = FacebookService(logger)
+    try:
+        facebook_service = FacebookService(logger)
+    except RuntimeError as err:
+        logger.error(f"Initialisation du service Facebook échouée : {err}")
+        telegram_service.send_message(str(err))
+        return
 
     telegram_service.send_message("Il est temps de publier Kevin")
 
