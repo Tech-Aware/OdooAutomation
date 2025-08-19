@@ -11,6 +11,7 @@ GRAPH_API_URL = "https://graph.facebook.com"
 PAGE_ID = config.FACEBOOK_PAGE_ID
 ACCESS_TOKEN = config.FACEBOOK_PAGE_TOKEN
 
+
 def _post(url, data):
     encoded = parse.urlencode(data).encode()
     req = request.Request(url, data=encoded, method="POST")
