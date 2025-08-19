@@ -142,30 +142,32 @@ class TelegramService:
             groups.append(choice)
         return groups
 
-    async def _ask_images(self, images: List[BytesIO]) -> BytesIO:
+    async def _ask_images(self, prompt: str, images: List[BytesIO]) -> BytesIO:
         """Affiche des images avec un bouton de choix et renvoie l'image choisie."""
         assert self.loop is not None
         self._callback_future = self.loop.create_future()
         mapping = {str(i): img for i, img in enumerate(images)}
+        await self.app.bot.send_message(
+            chat_id=self.allowed_user_id, text=prompt
+        )
         for key, img in mapping.items():
-            idx = int(key)
-            file = InputFile(img, filename=f"illustration_{idx}.png")
+            img.seek(0)
+            file = InputFile(img, filename=f"illustration_{key}.png")
             keyboard = InlineKeyboardMarkup(
                 [[InlineKeyboardButton("Choisir", callback_data=key)]]
             )
             await self.app.bot.send_photo(
                 chat_id=self.allowed_user_id,
                 photo=file,
-                caption=f"Illustration {idx}",
                 reply_markup=keyboard,
             )
-        answer_key = await self._callback_future
-        return mapping[answer_key]
+        answer = await self._callback_future
+        return mapping[answer]
 
-    def ask_image(self, images: List[BytesIO]) -> BytesIO:
+    def ask_image(self, prompt: str, images: List[BytesIO]) -> BytesIO:
         """Demande à l'utilisateur de choisir une image parmi celles fournies."""
         if not self.loop:
             raise RuntimeError("Le bot Telegram n'est pas démarré")
         return asyncio.run_coroutine_threadsafe(
-            self._ask_images(images), self.loop
+            self._ask_images(prompt, images), self.loop
         ).result()

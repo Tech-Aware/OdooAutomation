@@ -1,3 +1,4 @@
+import base64
 from io import BytesIO
 from typing import List
 
@@ -33,13 +34,23 @@ class OpenAIService:
     def generate_illustrations(self, text: str) -> List[BytesIO]:
         """Génère une liste d'illustrations en mémoire.
 
-        Pour l'instant, cette implémentation renvoie simplement deux flux
-        ``BytesIO`` fictifs. Dans une version réelle, on appellerait l'API
-        OpenAI et on transformerait les images reçues en objets ``BytesIO`` sans
-        jamais les écrire sur disque.
+        Les images renvoyées par l'API sont décodées depuis du base64 et
+        converties en ``BytesIO`` afin d'éviter toute écriture sur disque.
         """
+
         try:
-            return [BytesIO(b"image1"), BytesIO(b"image2")]
+            response = self.client.images.generate(
+                model="gpt-image-1",
+                prompt=text,
+                size="1024x1024",
+                n=2,
+                response_format="b64_json",
+            )
+
+            images: List[BytesIO] = []
+            for data in response.data:
+                images.append(BytesIO(base64.b64decode(data.b64_json)))
+            return images
         except Exception as err:  # pragma: no cover - log then ignore
             self.logger.error(
                 f"Erreur lors de la génération des illustrations : {err}"
