@@ -88,7 +88,8 @@ def compute_category_actions(
         return FRIDAY_CATEGORY_IDS.copy(), [58]
     if weekday == 6 and hour >= 6:  # Sunday from 6 AM
         return SUNDAY_CATEGORY_IDS.copy(), []
-    return SUNDAY_CATEGORY_IDS.copy(), []
+    # Other days: no category activated, deactivate all
+    return [], SUNDAY_CATEGORY_IDS.copy()
 
 
 def update_pos_categories(current_dt: datetime | None = None):

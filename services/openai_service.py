@@ -30,10 +30,16 @@ class OpenAIService:
             self.logger.error(f"Erreur lors de la génération des versions : {err}")
             return []
 
-    def generate_illustrations(self, text: str) -> List[str]:
-        """Génère une liste de noms d'illustrations fictives."""
+    def generate_illustrations(self, text: str) -> List[BytesIO]:
+        """Génère une liste d'illustrations en mémoire.
+
+        Pour l'instant, cette implémentation renvoie simplement deux flux
+        ``BytesIO`` fictifs. Dans une version réelle, on appellerait l'API
+        OpenAI et on transformerait les images reçues en objets ``BytesIO`` sans
+        jamais les écrire sur disque.
+        """
         try:
-            return ["image1.png", "image2.png"]
+            return [BytesIO(b"image1"), BytesIO(b"image2")]
         except Exception as err:  # pragma: no cover - log then ignore
             self.logger.error(
                 f"Erreur lors de la génération des illustrations : {err}"
