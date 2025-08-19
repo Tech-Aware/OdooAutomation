@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch, Mock, mock_open
 import logging
 import pytest
+import requests
 from io import BytesIO
 from unittest.mock import MagicMock, patch
 
@@ -25,7 +26,6 @@ class FacebookServiceTests(unittest.TestCase):
         mock_post.assert_called_once_with(
             "https://graph.facebook.com/123/feed",
             data={"message": "hello world", "access_token": "token"},
-            files=None,
             timeout=10,
         )
 
@@ -56,7 +56,6 @@ class FacebookServiceTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-=======
 @patch("services.facebook_service.requests.post")
 def test_post_to_page_without_image(mock_post, monkeypatch):
     monkeypatch.setattr(config, "FACEBOOK_PAGE_ID", "123")
@@ -107,3 +106,24 @@ def test_post_to_page_with_image(mock_post, monkeypatch):
     assert kwargs["data"] == {"caption": "hello", "access_token": "token"}
     assert "files" in kwargs
     assert "source" in kwargs["files"]
+
+
+@patch("services.facebook_service.requests.post")
+def test_post_to_page_logs_api_error(mock_post, monkeypatch, caplog):
+    monkeypatch.setattr(config, "FACEBOOK_PAGE_ID", "123")
+    monkeypatch.setattr(config, "PAGE_ACCESS_TOKEN", "token")
+
+    logger = logging.getLogger("test")
+    service = FacebookService(logger)
+
+    response = MagicMock()
+    response.json.return_value = {"error": "bad request"}
+    response.text = "{\"error\": \"bad request\"}"
+    http_error = requests.HTTPError(response=response)
+    response.raise_for_status.side_effect = http_error
+    mock_post.return_value = response
+
+    with caplog.at_level(logging.ERROR), pytest.raises(requests.HTTPError):
+        service.post_to_facebook_page("hello")
+
+    assert "bad request" in caplog.text
