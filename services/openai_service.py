@@ -3,8 +3,7 @@ import os
 from io import BytesIO
 from typing import List
 
-import openai
-from openai import OpenAI
+from openai import OpenAI, OpenAIError
 from config.log_config import log_execution
 
 
@@ -61,7 +60,7 @@ class OpenAIService:
                 img_stream = BytesIO(base64.b64decode(data.b64_json))
                 images.append(img_stream)
             return images
-        except openai.error.InvalidRequestError as err:
+        except OpenAIError as err:
             self.logger.exception(f"Erreur de génération d’images : {err}")
             return []
         except Exception as err:  # pragma: no cover - log then ignore
