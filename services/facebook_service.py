@@ -35,6 +35,13 @@ class FacebookService:
     ) -> dict | None:
         """Planifie un post sur la page Facebook principale."""
         files, fh = self._prepare_files(image)
+        if files:
+            url = f"https://graph.facebook.com/{self.page_id}/photos"
+            data = {"caption": message, "access_token": self.page_token}
+        else:
+            url = f"https://graph.facebook.com/{self.page_id}/feed"
+            data = {"message": message, "access_token": self.page_token}
+
 
         if files:
             url = f"https://graph.facebook.com/{self.page_id}/photos"
@@ -66,11 +73,11 @@ class FacebookService:
         """Diffuse le message dans les groupes donnés et retourne les IDs de réponse."""
         response_ids: List[str] = []
         for group in groups:
-            files = fh = None
-            if image is not None:
+            files, fh = self._prepare_files(image)
+            if files:
                 url = f"https://graph.facebook.com/{group}/photos"
                 data = {"caption": message, "access_token": self.page_token}
-                files, fh = self._prepare_files(image)
+
             else:
                 url = f"https://graph.facebook.com/{group}/feed"
                 data = {"message": message, "access_token": self.page_token}
