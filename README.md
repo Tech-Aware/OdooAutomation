@@ -7,7 +7,7 @@ Ce dépôt contient des scripts d'automatisation autour d'Odoo. On y génère de
 - **config/** : connexion à Odoo, authentification, utilitaires OpenAI et configuration du logger.
 - **generate_post/** : scripts de génération de posts (Facebook, LinkedIn) basés sur ChatGPT. Les prompts sont stockés dans `prompts/`.
 - **schedule_post_in_odoo/** : script pour planifier une publication dans Odoo (exemple pour Facebook).
-- **pos_product_interaction/** : exemples de manipulation de produits du point de vente (duplication).
+- **pos_product_interaction/** : exemples de manipulation de produits du point de vente.
 - **pos_category_management/** : activation ou désactivation automatique des catégories du point de vente selon le jour (BUVETTE, EPICERIE, BUREAU le vendredi dès 6h ; BUVETTE, EPICERIE, BUREAU et FOURNIL le dimanche dès 6h).
 - **tests/** : quelques tests unitaires couvrant la configuration et l'intégration.
 
