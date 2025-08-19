@@ -6,7 +6,7 @@ from services.telegram_service import TelegramService
 
 
 @patch("services.telegram_service.Application")
-def test_ask_image_returns_selected_index(mock_app):
+def test_ask_image_returns_selected_image(mock_app):
     builder = MagicMock()
     builder.token.return_value = builder
     app = MagicMock()
@@ -29,6 +29,6 @@ def test_ask_image_returns_selected_index(mock_app):
         return await task
 
     result = loop.run_until_complete(runner())
-    assert result == 1
+    assert result is images[1]
     assert app.bot.send_photo.await_count == 2
     loop.close()

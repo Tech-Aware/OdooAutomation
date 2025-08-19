@@ -106,13 +106,18 @@ class TelegramService:
     async def _ask(self, prompt: str, options: List[str]) -> str:
         assert self.loop is not None
         self._callback_future = self.loop.create_future()
-        keyboard = [[InlineKeyboardButton(opt, callback_data=opt)] for opt in options]
+        mapping = {str(i): opt for i, opt in enumerate(options)}
+        keyboard = [
+            [InlineKeyboardButton(opt, callback_data=str(i))]
+            for i, opt in mapping.items()
+        ]
         await self.app.bot.send_message(
             chat_id=self.allowed_user_id,
             text=prompt,
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        return await self._callback_future
+        answer_key = await self._callback_future
+        return mapping[answer_key]
 
     def ask_options(self, prompt: str, options: List[str]) -> str:
         if not self.loop:
@@ -137,14 +142,16 @@ class TelegramService:
             groups.append(choice)
         return groups
 
-    async def _ask_images(self, images: List[BytesIO]) -> int:
-        """Affiche des images avec un bouton de choix et renvoie l'index choisi."""
+    async def _ask_images(self, images: List[BytesIO]) -> BytesIO:
+        """Affiche des images avec un bouton de choix et renvoie l'image choisie."""
         assert self.loop is not None
         self._callback_future = self.loop.create_future()
-        for idx, img in enumerate(images):
+        mapping = {str(i): img for i, img in enumerate(images)}
+        for key, img in mapping.items():
+            idx = int(key)
             file = InputFile(img, filename=f"illustration_{idx}.png")
             keyboard = InlineKeyboardMarkup(
-                [[InlineKeyboardButton("Choisir", callback_data=str(idx))]]
+                [[InlineKeyboardButton("Choisir", callback_data=key)]]
             )
             await self.app.bot.send_photo(
                 chat_id=self.allowed_user_id,
@@ -152,10 +159,10 @@ class TelegramService:
                 caption=f"Illustration {idx}",
                 reply_markup=keyboard,
             )
-        result = await self._callback_future
-        return int(result)
+        answer_key = await self._callback_future
+        return mapping[answer_key]
 
-    def ask_image(self, images: List[BytesIO]) -> int:
+    def ask_image(self, images: List[BytesIO]) -> BytesIO:
         """Demande à l'utilisateur de choisir une image parmi celles fournies."""
         if not self.loop:
             raise RuntimeError("Le bot Telegram n'est pas démarré")
