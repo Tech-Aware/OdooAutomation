@@ -8,6 +8,7 @@ désormais réalisées via un véritable bot Telegram.
 
 from services.openai_service import OpenAIService
 import asyncio
+from io import BytesIO
 from services.telegram_service import TelegramService
 from services.facebook_service import FacebookService
 from config.log_config import setup_logger
@@ -33,13 +34,12 @@ def main() -> None:
             choice = telegram_service.ask_options("Choisissez la version", versions)
 
 
-            selected_image = None
+            selected_image: BytesIO | None = None
             if telegram_service.ask_yes_no("Générer des illustrations ?"):
                 illustrations = openai_service.generate_illustrations(choice)
                 if illustrations:
-                    selected_image = telegram_service.ask_options(
-                            "Choisissez l'illustration", illustrations
-                        )
+                    idx = telegram_service.ask_image(illustrations)
+                    selected_image = illustrations[idx]
 
             facebook_service.post_to_facebook_page(choice, selected_image)
             groups = telegram_service.ask_groups()

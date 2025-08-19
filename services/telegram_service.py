@@ -1,9 +1,10 @@
 import asyncio
 import threading
 import time
+from io import BytesIO
 from typing import List, Optional
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, InputFile
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
@@ -135,3 +136,29 @@ class TelegramService:
                 break
             groups.append(choice)
         return groups
+
+    async def _ask_images(self, images: List[BytesIO]) -> int:
+        """Affiche des images avec un bouton de choix et renvoie l'index choisi."""
+        assert self.loop is not None
+        self._callback_future = self.loop.create_future()
+        for idx, img in enumerate(images):
+            file = InputFile(img, filename=f"illustration_{idx}.png")
+            keyboard = InlineKeyboardMarkup(
+                [[InlineKeyboardButton("Choisir", callback_data=str(idx))]]
+            )
+            await self.app.bot.send_photo(
+                chat_id=self.allowed_user_id,
+                photo=file,
+                caption=f"Illustration {idx}",
+                reply_markup=keyboard,
+            )
+        result = await self._callback_future
+        return int(result)
+
+    def ask_image(self, images: List[BytesIO]) -> int:
+        """Demande à l'utilisateur de choisir une image parmi celles fournies."""
+        if not self.loop:
+            raise RuntimeError("Le bot Telegram n'est pas démarré")
+        return asyncio.run_coroutine_threadsafe(
+            self._ask_images(images), self.loop
+        ).result()
