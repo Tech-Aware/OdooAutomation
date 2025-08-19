@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from config.openai_utils import chat_gpt
 from config.log_config import setup_logger
 
-logger = setup_logger()
+logger = setup_logger(__name__)
 
 # Construction du chemin absolu vers le fichier de prompt
 prompt_path = os.path.join(os.path.dirname(__file__), 'prompts', 'linkedin.txt')
