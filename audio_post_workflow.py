@@ -3,10 +3,12 @@
 Le script invite l'utilisateur à envoyer un message vocal et construit un post
 à partir de la transcription obtenue. Les interactions utilisateurs sont
 désormais réalisées via un véritable bot Telegram.
+
 """
 
 from services.openai_service import OpenAIService
-from services.telegram_service import TelegramService
+import asyncio
+import telegram_service
 from services.facebook_service import FacebookService
 from config.log_config import setup_logger
 
@@ -19,27 +21,31 @@ def main() -> None:
     telegram_service.start()
     facebook_service = FacebookService(logger)
 
-    telegram_service.send_message("Il est temps de publier Kevin")
+    asyncio.run(telegram_service.send_message("Il est temps de publier Kevin"))
 
     while True:
-        text = telegram_service.wait_for_voice_message()
+        text = asyncio.run(telegram_service.wait_for_voice_message(openai_service))
         if not text:
             break
 
         try:
             versions = openai_service.generate_post_versions(text)
-            choice = telegram_service.ask_options("Choisissez la version", versions)
+            choice = asyncio.run(
+                telegram_service.ask_options("Choisissez la version", versions)
+            )
 
             selected_image = None
-            if telegram_service.ask_yes_no("Générer des illustrations ?"):
+            if asyncio.run(telegram_service.ask_yes_no("Générer des illustrations ?")):
                 illustrations = openai_service.generate_illustrations(choice)
                 if illustrations:
-                    selected_image = telegram_service.ask_options(
-                        "Choisissez l'illustration", illustrations
+                    selected_image = asyncio.run(
+                        telegram_service.ask_options(
+                            "Choisissez l'illustration", illustrations
+                        )
                     )
 
             facebook_service.post_to_facebook_page(choice, selected_image)
-            groups = telegram_service.ask_groups()
+            groups = asyncio.run(telegram_service.ask_groups())
             if groups:
                 facebook_service.cross_post_to_groups(
                     choice, groups, selected_image
