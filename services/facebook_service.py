@@ -10,12 +10,12 @@ class FacebookService:
 
     def __init__(self, logger) -> None:
         self.logger = logger
-        if not config.FACEBOOK_PAGE_ID or not config.FACEBOOK_PAGE_TOKEN:
+        if not config.FACEBOOK_PAGE_ID or not config.PAGE_ACCESS_TOKEN:
             raise RuntimeError(
-                "FACEBOOK_PAGE_ID or FACEBOOK_PAGE_TOKEN is missing in config"
+                "FACEBOOK_PAGE_ID or PAGE_ACCESS_TOKEN is missing in config"
             )
         self.page_id = config.FACEBOOK_PAGE_ID
-        self.page_token = config.FACEBOOK_PAGE_TOKEN
+        self.page_token = config.PAGE_ACCESS_TOKEN
 
     def _prepare_files(self, image: Union[str, BytesIO] | None):
         """Prépare les données de fichier pour l'API Facebook."""

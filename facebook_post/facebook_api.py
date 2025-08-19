@@ -10,7 +10,7 @@ logger = setup_logger()
 GRAPH_API_URL = "https://graph.facebook.com"
 
 PAGE_ID = os.getenv("FB_PAGE_ID")
-ACCESS_TOKEN = os.getenv("FB_PAGE_ACCESS_TOKEN")
+ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 
 def _post(url, data):
     encoded = parse.urlencode(data).encode()
