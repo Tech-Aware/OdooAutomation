@@ -9,7 +9,7 @@ Auteur : Kevin, Tech Aware
 """
 
 from datetime import datetime, timedelta
-from config.log_config import setup_logger
+from config.log_config import setup_logger, log_execution
 from config.odoo_connect import get_odoo_connection
 
 # Initialisation logging
@@ -17,6 +17,7 @@ logger = setup_logger()
 
 # === Configuration Odoo ===
 
+@log_execution
 def get_facebook_stream_id(models, db, uid, password):
     try:
         streams = models.execute_kw(
@@ -35,6 +36,7 @@ def get_facebook_stream_id(models, db, uid, password):
         logger.error(f"Erreur lors de la récupération du flux Facebook : {e}")
         raise
 
+@log_execution
 def schedule_post(models, db, uid, password, stream_id, message, minutes_later=30):
     try:
         scheduled_date = (datetime.utcnow() + timedelta(minutes=minutes_later)).strftime('%Y-%m-%d %H:%M:%S')
@@ -55,6 +57,7 @@ def schedule_post(models, db, uid, password, stream_id, message, minutes_later=3
         logger.error(f"Erreur lors de la planification de la publication Facebook : {e}")
         raise
 
+@log_execution
 def main():
     try:
         db, uid, password, models = get_odoo_connection()

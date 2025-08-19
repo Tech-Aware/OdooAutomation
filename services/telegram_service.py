@@ -14,11 +14,13 @@ from telegram.ext import (
 )
 
 import config
+from config.log_config import log_execution
 
 
 class TelegramService:
     """Service d'interaction via Telegram basé sur python-telegram-bot."""
 
+    @log_execution
     def __init__(self, logger, openai_service: Optional["OpenAIService"] = None) -> None:
         self.logger = logger
         self.openai_service = openai_service
@@ -38,6 +40,7 @@ class TelegramService:
     # ------------------------------------------------------------------
     # Gestion du bot
     # ------------------------------------------------------------------
+    @log_execution
     def start(self) -> None:
         if self._thread and self._thread.is_alive():
             return
@@ -59,6 +62,7 @@ class TelegramService:
     # ------------------------------------------------------------------
     # Envoi de messages
     # ------------------------------------------------------------------
+    @log_execution
     def send_message(self, text: str) -> None:
         if not self.loop:
             raise RuntimeError("Le bot Telegram n'est pas démarré")
@@ -87,6 +91,7 @@ class TelegramService:
         self._voice_future = self.loop.create_future()
         return await self._voice_future
 
+    @log_execution
     def wait_for_voice_message(self) -> str:
         if not self.loop:
             raise RuntimeError("Le bot Telegram n'est pas démarré")
@@ -119,6 +124,7 @@ class TelegramService:
         answer_key = await self._callback_future
         return mapping[answer_key]
 
+    @log_execution
     def ask_options(self, prompt: str, options: List[str]) -> str:
         if not self.loop:
             raise RuntimeError("Le bot Telegram n'est pas démarré")
@@ -126,10 +132,12 @@ class TelegramService:
             self._ask(prompt, options), self.loop
         ).result()
 
+    @log_execution
     def ask_yes_no(self, prompt: str) -> bool:
         response = self.ask_options(prompt, ["Oui", "Non"])
         return response == "Oui"
 
+    @log_execution
     def ask_groups(self) -> List[str]:
         groups = []
         data = config.load_group_data()
@@ -163,6 +171,7 @@ class TelegramService:
         answer_key = await self._callback_future
         return mapping[answer_key]
 
+    @log_execution
     def ask_image(self, prompt: str, images: List[BytesIO]) -> BytesIO:
         """Demande à l'utilisateur de choisir une image parmi celles fournies."""
         if not self.loop:

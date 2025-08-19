@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from config.odoo_connect import get_odoo_connection
-from config.log_config import setup_logger
+from config.log_config import setup_logger, log_execution
 
 logger = setup_logger()
 
@@ -39,6 +39,7 @@ def _ensure_category_active(models, db, uid, password, category_id):
                 [[config_ids[0]], {"iface_available_categ_ids": [(4, category_id)]}],
             )
 
+@log_execution
 def fetch_all_categories(models, db, uid, password):
     """Return all POS categories with their IDs."""
     return models.execute_kw(
@@ -76,6 +77,7 @@ def _deactivate_category(models, db, uid, password, category_id):
             )
 
 
+@log_execution
 def compute_category_actions(
     current_dt: datetime,
 ) -> tuple[list[int], list[int]]:
@@ -92,6 +94,7 @@ def compute_category_actions(
     return [], SUNDAY_CATEGORY_IDS.copy()
 
 
+@log_execution
 def update_pos_categories(current_dt: datetime | None = None):
     """Update POS categories according to the current day and time."""
     if current_dt is None:
