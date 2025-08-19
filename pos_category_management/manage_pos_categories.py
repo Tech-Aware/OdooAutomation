@@ -88,7 +88,7 @@ def compute_category_actions(
         return FRIDAY_CATEGORY_IDS.copy(), [58]
     if weekday == 6 and hour >= 6:  # Sunday from 6 AM
         return SUNDAY_CATEGORY_IDS.copy(), []
-    return [], SUNDAY_CATEGORY_IDS.copy()
+    return SUNDAY_CATEGORY_IDS.copy(), []
 
 
 def update_pos_categories(current_dt: datetime | None = None):
@@ -107,8 +107,17 @@ def update_pos_categories(current_dt: datetime | None = None):
 
     for category_id in to_activate:
         try:
+            name = ""
             _ensure_category_active(models, db, uid, password, category_id)
-            logger.info("Catégorie POS activée : %s", category_id)
+            if category_id == 79:
+                name = "BUVETTE"
+            elif category_id == 72:
+                name = "EPICERIE"
+            elif category_id == 53:
+                name = "MEMBRES"
+            elif category_id == 58:
+                name = "FOURNIL"
+            logger.info("Catégorie POS activée : %s", f"{category_id} {name}")
         except Exception as err:
             logger.error(
                 "Erreur lors de l'activation de la catégorie %s : %s",
@@ -118,8 +127,17 @@ def update_pos_categories(current_dt: datetime | None = None):
 
     for category_id in to_deactivate:
         try:
+            name = ""
             _deactivate_category(models, db, uid, password, category_id)
-            logger.info("Catégorie POS désactivée : %s", category_id)
+            if category_id == 79:
+                name = "BUVETTE"
+            elif category_id == 72:
+                name = "EPICERIE"
+            elif category_id == 53:
+                name = "MEMBRES"
+            elif category_id == 58:
+                name = "FOURNIL"
+            logger.info("Catégorie POS désactivée : %s", f"{category_id} {name}")
         except Exception as err:
             logger.error(
                 "Erreur lors de la désactivation de la catégorie %s : %s",
