@@ -13,8 +13,19 @@ class OpenAIService:
 
     def generate_post_versions(self, text: str) -> List[str]:
         """Génère plusieurs versions d'un message."""
+        prompt = (
+            "Propose trois versions DISTINCTES du post suivant, chacune avec un ton et un style différents "
+            "(ex: professionnel, humoristique, percutant). Retourne les versions séparées par '---'.\n"
+            f"{text}"
+        )
         try:
-            return [f"{text}", f"{text} (variante)"]
+            response = self.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=1.0,
+            )
+            content = response.choices[0].message.content
+            return [v.strip() for v in content.split("---") if v.strip()]
         except Exception as err:  # pragma: no cover - log then ignore
             self.logger.error(f"Erreur lors de la génération des versions : {err}")
             return []
