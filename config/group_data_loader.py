@@ -4,7 +4,7 @@ import json
 import os
 from .log_config import setup_logger
 
-logger = setup_logger()
+logger = setup_logger(__name__)
 
 def load_group_data(file_name="group_data.json"):
     """

@@ -8,7 +8,7 @@ from .log_config import setup_logger  # Import du setup_logger depuis le même d
 from . import OPENAI_API_KEY
 
 # Initialise le logger via la config centrale
-logger = setup_logger()
+logger = setup_logger(__name__)
 
 # Configure the OpenAI client using the key provided in config
 if not OPENAI_API_KEY:

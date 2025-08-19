@@ -14,7 +14,7 @@ from config.log_config import setup_logger
 
 
 def main() -> None:
-    logger = setup_logger()
+    logger = setup_logger(__name__)
 
     openai_service = OpenAIService(logger)
     telegram_service = TelegramService(logger, openai_service)

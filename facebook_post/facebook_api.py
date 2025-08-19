@@ -4,12 +4,12 @@ from urllib import request, parse
 import config
 from config.log_config import setup_logger
 
-logger = setup_logger()
+logger = setup_logger(__name__)
 GRAPH_API_URL = "https://graph.facebook.com"
 
 # Retrieve credentials from the central configuration
 PAGE_ID = config.FACEBOOK_PAGE_ID
-ACCESS_TOKEN = config.FACEBOOK_PAGE_TOKEN
+ACCESS_TOKEN = config.PAGE_ACCESS_TOKEN
 
 
 def _post(url, data):

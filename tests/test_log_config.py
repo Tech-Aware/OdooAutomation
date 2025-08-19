@@ -3,10 +3,11 @@
 import unittest
 from config.log_config import setup_logger
 
+
 class TestLogger(unittest.TestCase):
     def setUp(self):
         # Initialisation du logger avant chaque test
-        self.logger = setup_logger()
+        self.logger = setup_logger(__name__)
 
     def test_info_log(self):
         try:
