@@ -1,52 +1,163 @@
+import asyncio
+import threading
+import time
 from typing import List, Optional
+
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import (
+    Application,
+    CallbackQueryHandler,
+    ContextTypes,
+    MessageHandler,
+    filters,
+)
+
+import config
 
 
 class TelegramService:
-    """Service simulant l'interaction via Telegram."""
+    """Service d'interaction via Telegram basé sur python-telegram-bot."""
 
     def __init__(self, logger, openai_service: Optional["OpenAIService"] = None) -> None:
         self.logger = logger
         self.openai_service = openai_service
+        self.allowed_user_id = config.TELEGRAM_USER_ID
+        self.app = Application.builder().token(config.TELEGRAM_BOT_TOKEN).build()
+        self.app.add_handler(
+            MessageHandler(
+                filters.VOICE & filters.User(self.allowed_user_id), self._voice_handler
+            )
+        )
+        self.app.add_handler(
+            CallbackQueryHandler(self._callback_handler, filters.User(self.allowed_user_id))
+        )
+        self.loop: asyncio.AbstractEventLoop | None = None
+        self._voice_future: asyncio.Future[str] | None = None
+        self._callback_future: asyncio.Future[str] | None = None
+        self._thread: threading.Thread | None = None
 
+    # ------------------------------------------------------------------
+    # Gestion du bot
+    # ------------------------------------------------------------------
+    def start(self) -> None:
+        """Démarre le bot en mode polling dans un thread dédié."""
+        if self._thread and self._thread.is_alive():
+            return
+
+        def _run() -> None:
+            self.logger.info("Démarrage du bot Telegram (polling)...")
+            asyncio.set_event_loop(asyncio.new_event_loop())
+            self.loop = asyncio.get_event_loop()
+            self.loop.run_until_complete(self.app.initialize())
+            self.loop.run_until_complete(self.app.start())
+            self.loop.run_until_complete(self.app.updater.start_polling())
+            self.loop.run_forever()
+
+        self._thread = threading.Thread(target=_run, daemon=True)
+        self._thread.start()
+        while self.loop is None:
+            time.sleep(0.1)
+
+    # ------------------------------------------------------------------
+    # Envoi de messages
+    # ------------------------------------------------------------------
     def send_message(self, text: str) -> None:
-        """Envoie un message textuel à l'utilisateur (simulation)."""
-        self.logger.info(f"Message envoyé : {text}")
-        print(text)
+        if not self.loop:
+            raise RuntimeError("Le bot Telegram n'est pas démarré")
+        asyncio.run_coroutine_threadsafe(
+            self.app.bot.send_message(chat_id=self.allowed_user_id, text=text),
+            self.loop,
+        )
+
+    # ------------------------------------------------------------------
+    # Gestion des messages vocaux
+    # ------------------------------------------------------------------
+    async def _voice_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        if not (update.message and update.message.voice):
+            return
+        if self._voice_future is None or self._voice_future.done():
+            return
+        file = await context.bot.get_file(update.message.voice.file_id)
+        data = await file.download_as_bytearray()
+        text = ""
+        if self.openai_service:
+            text = self.openai_service.transcribe_audio(bytes(data))
+        self._voice_future.set_result(text)
+
+    async def _wait_voice(self) -> str:
+        assert self.loop is not None
+        self._voice_future = self.loop.create_future()
+        return await self._voice_future
 
     def wait_for_voice_message(self) -> str:
-        """Attend un message vocal et retourne sa transcription.
+        if not self.loop:
+            raise RuntimeError("Le bot Telegram n'est pas démarré")
+        return asyncio.run_coroutine_threadsafe(self._wait_voice(), self.loop).result()
 
-        L'utilisateur est invité à saisir la transcription attendue. Une
-        chaîne vide met fin à l'attente.
-        """
-        self.logger.info("En attente d'un message vocal…")
-        audio_sim = input("Message vocal (laisser vide pour arrêter) : ").strip()
-        if not audio_sim:
-            return ""
-        if self.openai_service:
-            return self.openai_service.transcribe_audio(audio_sim.encode("utf-8"))
-        return audio_sim
+    # ------------------------------------------------------------------
+    # Questions avec boutons
+    # ------------------------------------------------------------------
+    async def _callback_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        if update.effective_user and update.effective_user.id != self.allowed_user_id:
+            return
+        if self._callback_future and not self._callback_future.done():
+            self._callback_future.set_result(update.callback_query.data)
+        await update.callback_query.answer()
+        await update.callback_query.edit_message_reply_markup(None)
+
+    async def _ask(self, prompt: str, options: List[str]) -> str:
+        assert self.loop is not None
+        self._callback_future = self.loop.create_future()
+        keyboard = [[InlineKeyboardButton(opt, callback_data=opt)] for opt in options]
+        await self.app.bot.send_message(
+            chat_id=self.allowed_user_id,
+            text=prompt,
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
+        return await self._callback_future
+
+    async def _ask_images(self, prompt: str, images: List[str]) -> str:
+        assert self.loop is not None
+        self._callback_future = self.loop.create_future()
+        await self.app.bot.send_message(chat_id=self.allowed_user_id, text=prompt)
+        for path in images:
+            with open(path, "rb") as img:
+                keyboard = InlineKeyboardMarkup(
+                    [[InlineKeyboardButton("Choisir", callback_data=path)]]
+                )
+                await self.app.bot.send_photo(
+                    chat_id=self.allowed_user_id,
+                    photo=img,
+                    reply_markup=keyboard,
+                )
+        return await self._callback_future
 
     def ask_options(self, prompt: str, options: List[str]) -> str:
-        """Demande à l'utilisateur de choisir parmi plusieurs options."""
-        self.logger.info(prompt)
-        for idx, opt in enumerate(options, 1):
-            print(f"{idx}. {opt}")
-        try:
-            choice = int(input("Choix : ")) - 1
-            return options[choice]
-        except Exception:  # pragma: no cover - comportement interactif
-            self.logger.error("Choix invalide, première option retenue par défaut.")
-            return options[0]
+        if not self.loop:
+            raise RuntimeError("Le bot Telegram n'est pas démarré")
+        return asyncio.run_coroutine_threadsafe(
+            self._ask(prompt, options), self.loop
+        ).result()
+
+    def ask_image(self, prompt: str, images: List[str]) -> str:
+        if not self.loop:
+            raise RuntimeError("Le bot Telegram n'est pas démarré")
+        return asyncio.run_coroutine_threadsafe(
+            self._ask_images(prompt, images), self.loop
+        ).result()
 
     def ask_yes_no(self, prompt: str) -> bool:
-        """Retourne True si l'utilisateur répond oui."""
-        answer = input(f"{prompt} (o/n) : ").strip().lower()
-        return answer in {"o", "oui", "y", "yes"}
+        response = self.ask_options(prompt, ["Oui", "Non"])
+        return response == "Oui"
 
     def ask_groups(self) -> List[str]:
-        """Demande la liste des groupes Facebook."""
-        groups = input("Groupes Facebook (séparés par des virgules) : ")
-        if groups.strip():
-            return [g.strip() for g in groups.split(",")]
-        return []
+        groups = []
+        data = config.load_group_data()
+        options = list(data.keys())
+        options.append("Terminer")
+        while True:
+            choice = self.ask_options("Choisissez un groupe ou Terminer", options)
+            if choice == "Terminer":
+                break
+            groups.append(choice)
+        return groups
