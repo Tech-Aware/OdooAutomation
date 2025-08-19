@@ -35,6 +35,7 @@ class FacebookService:
     ) -> dict | None:
         """Planifie un post sur la page Facebook principale."""
         files, fh = self._prepare_files(image)
+
         if files:
             url = f"https://graph.facebook.com/{self.page_id}/photos"
             data = {"caption": message, "access_token": self.page_token}
@@ -42,15 +43,9 @@ class FacebookService:
             url = f"https://graph.facebook.com/{self.page_id}/feed"
             data = {"message": message, "access_token": self.page_token}
 
-
+        request_kwargs = {"data": data, "timeout": 10}
         if files:
-            url = f"https://graph.facebook.com/{self.page_id}/photos"
-            data = {"caption": message, "access_token": self.page_token}
-            request_kwargs = {"data": data, "files": files, "timeout": 10}
-        else:
-            url = f"https://graph.facebook.com/{self.page_id}/feed"
-            data = {"message": message, "access_token": self.page_token}
-            request_kwargs = {"data": data, "timeout": 10}
+            request_kwargs["files"] = files
 
         try:
             response = requests.post(url, **request_kwargs)
