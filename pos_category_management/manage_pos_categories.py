@@ -3,7 +3,7 @@ from datetime import datetime
 from config.odoo_connect import get_odoo_connection
 from config.log_config import setup_logger, log_execution
 
-logger = setup_logger()
+logger = setup_logger(__name__)
 
 # Category identifiers used for automatic activation/deactivation.
 # These values come from the Odoo database and therefore are integers

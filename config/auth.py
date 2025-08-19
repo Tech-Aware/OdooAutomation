@@ -3,9 +3,11 @@
 from config.log_config import setup_logger
 
 
+logger = setup_logger(__name__)
+
+
 def authenticate_odoo(url, db, username, password):
     """Simule l'authentification Odoo pour les tests hors ligne."""
-    logger = setup_logger()
     logger.info("Tentative d'authentification Odoo...")
     if password == "mauvais_mot_de_passe":
         logger.error("Échec de l'authentification Odoo : identifiants invalides.")

@@ -13,7 +13,7 @@ from config.log_config import setup_logger, log_execution
 from config.odoo_connect import get_odoo_connection
 
 # Initialisation logging
-logger = setup_logger()
+logger = setup_logger(__name__)
 
 # === Configuration Odoo ===
 

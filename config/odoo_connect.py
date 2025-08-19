@@ -5,6 +5,9 @@ from config.auth import authenticate_odoo
 from config import ODOO_URL, ODOO_DB, ODOO_USER, ODOO_PASSWORD
 
 
+logger = setup_logger(__name__)
+
+
 class FakeModels:
     def __init__(self):
         self.categories = {1: {"id": 1, "name": "Cat1", "parent_id": False}}
@@ -70,7 +73,6 @@ def get_odoo_connection():
     Utilise la fonction authenticate_odoo pour gérer l'authentification.
     Retourne : db, uid, password, models (proxy pour manipuler les objets Odoo)
     """
-    logger = setup_logger()
     logger.info("Démarrage de l'initialisation de la connexion à Odoo.")
 
     try:
