@@ -32,7 +32,7 @@ def get_facebook_stream_id(models, db, uid, password):
         logger.info(f"Flux Facebook sélectionné : {streams[0]['name']} (ID {stream_id})")
         return stream_id
     except Exception as e:
-        logger.error(f"Erreur lors de la récupération du flux Facebook : {e}")
+        logger.exception(f"Erreur lors de la récupération du flux Facebook : {e}")
         raise
 
 def schedule_post(models, db, uid, password, stream_id, message, minutes_later=30):
@@ -52,7 +52,9 @@ def schedule_post(models, db, uid, password, stream_id, message, minutes_later=3
         logger.info(f"Publication Facebook planifiée avec succès (ID {post_id}), à {scheduled_date}")
         return post_id
     except Exception as e:
-        logger.error(f"Erreur lors de la planification de la publication Facebook : {e}")
+        logger.exception(
+            f"Erreur lors de la planification de la publication Facebook : {e}"
+        )
         raise
 
 def main():
@@ -63,7 +65,7 @@ def main():
         schedule_post(models, db, uid, password, stream_id, post_message)
         logger.info("Script terminé avec succès.")
     except Exception as err:
-        logger.error(f"Échec du script : {err}")
+        logger.exception(f"Échec du script : {err}")
 
 if __name__ == "__main__":
     main()

@@ -39,7 +39,7 @@ class FacebookService:
             response.raise_for_status()
             self.logger.info(f"Facebook page response: {response.text}")
         except Exception as e:
-            self.logger.error(
+            self.logger.exception(
                 f"Erreur lors de la publication sur la page Facebook : {e}"
             )
         finally:
@@ -61,7 +61,7 @@ class FacebookService:
                     f"Réponse du groupe {group}: {response.text}"
                 )
             except Exception as e:
-                self.logger.error(
+                self.logger.exception(
                     f"Erreur lors de la publication dans le groupe {group} : {e}"
                 )
             finally:

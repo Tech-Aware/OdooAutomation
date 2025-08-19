@@ -32,7 +32,9 @@ class OpenAIService:
             content = response.choices[0].message.content
             return [v.strip() for v in content.split("---") if v.strip()]
         except Exception as err:  # pragma: no cover - log then ignore
-            self.logger.error(f"Erreur lors de la génération des versions : {err}")
+            self.logger.exception(
+                f"Erreur lors de la génération des versions : {err}"
+            )
             return []
 
     def generate_illustrations(self, prompt: str) -> List[BytesIO]:
@@ -56,10 +58,10 @@ class OpenAIService:
                 images.append(img_stream)
             return images
         except openai.error.InvalidRequestError as err:
-            self.logger.error(f"Erreur de génération d’images : {err}")
+            self.logger.exception(f"Erreur de génération d’images : {err}")
             return []
         except Exception as err:  # pragma: no cover - log then ignore
-            self.logger.error(
+            self.logger.exception(
                 f"Erreur lors de la génération des illustrations : {err}"
             )
             return []
@@ -75,7 +77,7 @@ class OpenAIService:
             )
             return response.text.strip()
         except Exception as err:  # pragma: no cover - log then ignore
-            self.logger.error(
+            self.logger.exception(
                 f"Erreur lors de la transcription audio : {err}"
             )
             return ""

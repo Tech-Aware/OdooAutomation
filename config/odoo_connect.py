@@ -91,5 +91,5 @@ def get_odoo_connection():
         return db, uid, password, FAKE_MODELS
 
     except Exception as conn_error:
-        logger.error(f"Erreur lors de la connexion à Odoo : {conn_error}")
+        logger.exception(f"Erreur lors de la connexion à Odoo : {conn_error}")
         raise

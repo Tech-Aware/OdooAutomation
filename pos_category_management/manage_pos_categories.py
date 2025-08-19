@@ -102,7 +102,7 @@ def update_pos_categories(current_dt: datetime | None = None):
         categories = fetch_all_categories(models, db, uid, password)
         logger.info("Catégories POS existantes : %s", categories)
     except Exception as err:
-        logger.error("Impossible de récupérer les catégories POS : %s", err)
+        logger.exception("Impossible de récupérer les catégories POS : %s", err)
 
     to_activate, to_deactivate = compute_category_actions(current_dt)
 
@@ -120,7 +120,7 @@ def update_pos_categories(current_dt: datetime | None = None):
                 name = "FOURNIL"
             logger.info("Catégorie POS activée : %s", f"{category_id} {name}")
         except Exception as err:
-            logger.error(
+            logger.exception(
                 "Erreur lors de l'activation de la catégorie %s : %s",
                 category_id,
                 err,
@@ -140,7 +140,7 @@ def update_pos_categories(current_dt: datetime | None = None):
                 name = "FOURNIL"
             logger.info("Catégorie POS désactivée : %s", f"{category_id} {name}")
         except Exception as err:
-            logger.error(
+            logger.exception(
                 "Erreur lors de la désactivation de la catégorie %s : %s",
                 category_id,
                 err,
