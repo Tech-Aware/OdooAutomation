@@ -1,4 +1,7 @@
+from io import BytesIO
 from typing import List
+
+from openai import OpenAI
 
 
 class OpenAIService:
@@ -6,6 +9,7 @@ class OpenAIService:
 
     def __init__(self, logger) -> None:
         self.logger = logger
+        self.client = OpenAI()
 
     def generate_post_versions(self, text: str) -> List[str]:
         """Génère plusieurs versions d'un message."""
@@ -26,15 +30,17 @@ class OpenAIService:
             return []
 
     def transcribe_audio(self, audio_data: bytes) -> str:
-        """Transcrit un contenu audio en texte.
+        """Transcrit un contenu audio en texte via le modèle Whisper."""
 
-        Dans cette implémentation simplifiée, ``audio_data`` représente les
-        données brutes du message vocal. La transcription est simulée en
-        décodant ces octets en UTF-8. En cas d'erreur, une chaîne vide est
-        retournée.
-        """
         try:
-            return audio_data.decode("utf-8").strip()
+            audio_file = BytesIO(audio_data)
+            response = self.client.audio.transcriptions.create(
+                model="whisper-1",
+                file=("voice.ogg", audio_file, "audio/ogg"),
+            )
+            return response.text.strip()
         except Exception as err:  # pragma: no cover - log then ignore
-            self.logger.error(f"Erreur lors de la transcription audio : {err}")
+            self.logger.error(
+                f"Erreur lors de la transcription audio : {err}"
+            )
             return ""
