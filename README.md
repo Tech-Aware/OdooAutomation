@@ -18,6 +18,7 @@ Le projet s'appuie sur les bibliothèques suivantes (voir `requirements.txt`) :
 ```
 python-dotenv
 openai
+python-telegram-bot
 ```
 
 Installez-les avec :
@@ -42,7 +43,7 @@ FACEBOOK_PAGE_ID=<id de votre page Facebook>
 FACEBOOK_PAGE_TOKEN=<token de la page Facebook>
 ```
 
-Ces variables permettent de se connecter à Odoo, à l'API OpenAI, à Facebook et à Telegram pour l'envoi de notifications. `TELEGRAM_BOT_TOKEN` et `TELEGRAM_USER_ID` sont utilisés par `telegram_service.py` pour envoyer des messages, tandis que `FACEBOOK_PAGE_ID` et `FACEBOOK_PAGE_TOKEN` servent aux modules de publication Facebook.
+Ces variables permettent de se connecter à Odoo, à l'API OpenAI, à Facebook et à Telegram pour l'envoi de notifications. `TELEGRAM_BOT_TOKEN` et `TELEGRAM_USER_ID` sont utilisés par `services/telegram_service.py` pour envoyer des messages, tandis que `FACEBOOK_PAGE_ID` et `FACEBOOK_PAGE_TOKEN` servent aux modules de publication Facebook.
 
 ## Utilisation principale
 
@@ -83,6 +84,24 @@ Ces variables permettent de se connecter à Odoo, à l'API OpenAI, à Facebook e
   add_ids = [CATEGORY_IDS[name] for name in add]
   # add_ids == [79, 72, 53, 58]
   ```
+
+## Service Telegram
+
+Le fichier `services/telegram_service.py` fournit la classe `TelegramService` permettant de dialoguer avec un bot Telegram en mode polling.  
+Pour l'utiliser :
+
+```python
+from services.telegram_service import TelegramService
+from services.openai_service import OpenAIService
+from config import logger
+
+openai_service = OpenAIService(logger)
+service = TelegramService(logger, openai_service)
+service.start()
+service.send_message("Bot prêt !")
+```
+
+`TelegramService` propose aussi des méthodes interactives comme `ask_options`, `ask_yes_no`, `ask_groups`, `wait_for_voice_message` ou `ask_image`, exploitées par des scripts tels que `audio_post_workflow.py`.
 
 ## Exécution des tests
 
