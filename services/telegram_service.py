@@ -40,19 +40,22 @@ class TelegramService:
     # Gestion du bot
     # ------------------------------------------------------------------
     def start(self) -> None:
-        """Démarre le bot en mode polling dans un thread dédié."""
         if self._thread and self._thread.is_alive():
             return
 
         def _run() -> None:
             self.logger.info("Démarrage du bot Telegram (polling)...")
-            self.app.run_polling()
+            asyncio.set_event_loop(asyncio.new_event_loop())
+            self.loop = asyncio.get_event_loop()
+            self.loop.run_until_complete(self.app.initialize())
+            self.loop.run_until_complete(self.app.start())
+            self.loop.run_until_complete(self.app.updater.start_polling())
+            self.loop.run_forever()
 
         self._thread = threading.Thread(target=_run, daemon=True)
         self._thread.start()
-        while self.app.bot is None or self.app.bot.loop is None:
+        while self.loop is None:
             time.sleep(0.1)
-        self.loop = self.app.bot.loop
 
     # ------------------------------------------------------------------
     # Envoi de messages
