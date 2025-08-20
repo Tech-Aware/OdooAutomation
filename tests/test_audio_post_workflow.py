@@ -52,6 +52,7 @@ class DummyTelegramService:
             "Faut-il corriger cette version ?": True,
             "Ajouter un lien ?": True,
             "Générer des illustrations ?": False,
+            "Souhaitez-vous programmer la publication ?": False,
         }
         return mapping.get(prompt, False)
 
@@ -95,3 +96,66 @@ def test_main_flow(monkeypatch):
     workflow_main()
 
     assert fb_service.posted == ("fixed\nhttp://example.com", None)
+
+
+class SchedulingDummyTelegramService(DummyTelegramService):
+    def ask_yes_no(self, prompt):
+        mapping = {
+            "Faut-il corriger cette version ?": True,
+            "Ajouter un lien ?": True,
+            "Générer des illustrations ?": False,
+            "Souhaitez-vous programmer la publication ?": True,
+        }
+        return mapping.get(prompt, False)
+
+
+def test_scheduling_flow(monkeypatch):
+    monkeypatch.setattr(
+        "audio_post_workflow.setup_logger", lambda name: DummyLogger()
+    )
+    monkeypatch.setattr(
+        "audio_post_workflow.OpenAIService", DummyOpenAIService
+    )
+    monkeypatch.setattr(
+        "audio_post_workflow.TelegramService",
+        SchedulingDummyTelegramService,
+    )
+
+    schedule_args = {}
+
+    monkeypatch.setattr(
+        "audio_post_workflow.get_odoo_connection",
+        lambda: ("db", 1, "pwd", object()),
+    )
+    monkeypatch.setattr(
+        "audio_post_workflow.get_facebook_stream_id",
+        lambda models, db, uid, pwd: 99,
+    )
+
+    def fake_schedule(models, db, uid, pwd, stream_id, message, minutes_later):
+        schedule_args["params"] = (
+            models,
+            db,
+            uid,
+            pwd,
+            stream_id,
+            message,
+            minutes_later,
+        )
+
+    monkeypatch.setattr(
+        "audio_post_workflow.schedule_post",
+        fake_schedule,
+    )
+
+    fb_service = DummyFacebookService(DummyLogger())
+    monkeypatch.setattr(
+        "audio_post_workflow.FacebookService", lambda logger: fb_service
+    )
+
+    workflow_main()
+
+    assert "params" in schedule_args
+    assert schedule_args["params"][5] == "fixed\nhttp://example.com"
+    assert isinstance(schedule_args["params"][6], int)
+    assert fb_service.posted is None
