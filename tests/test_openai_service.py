@@ -13,9 +13,11 @@ class DummyLogger:
 
 
 class DummyCompletions:
-    def __init__(self, content="A---B---C"):
+    def __init__(self, content=None):
         self.called_with = None
-        self.content = content
+        self.content = content or (
+            "A) standard\nB) short\nC) accroche1\naccroche2\naccroche3\nD) #tag1 #tag2\nE) merci"
+        )
 
     def create(self, **kwargs):
         self.called_with = kwargs
@@ -38,23 +40,25 @@ class DummyCompletions:
 
 
 class DummyClient:
-    def __init__(self, content="A---B---C"):
+    def __init__(self, content=None):
         self.chat = type("Chat", (), {"completions": DummyCompletions(content)})()
 
 
-def test_generate_post_versions(monkeypatch):
+def test_generate_event_post(monkeypatch):
     dummy_client = DummyClient()
     monkeypatch.setattr("services.openai_service.OpenAI", lambda: dummy_client)
     service = OpenAIService(DummyLogger())
 
-    versions = service.generate_post_versions("Mon post")
+    result = service.generate_event_post("Mon programme")
 
-    assert versions == ["A", "B", "C"]
-    assert dummy_client.chat.completions.called_with["temperature"] >= 1.0
+    assert result["standard"] == "standard"
+    assert result["short"] == "short"
+    assert result["hooks"] == ["accroche1", "accroche2", "accroche3"]
+    assert result["hashtags"] in [["#tag1 #tag2"], ["#tag1", "#tag2"]]
     messages = dummy_client.chat.completions.called_with["messages"]
     expected_prompt = Path("prompt_system.txt").read_text(encoding="utf-8")
     assert messages[0] == {"role": "system", "content": expected_prompt}
-    assert "versions DISTINCTES" in messages[1]["content"]
+    assert "Mon programme" in messages[1]["content"]
 
 
 def test_apply_corrections(monkeypatch):
@@ -68,6 +72,7 @@ def test_apply_corrections(monkeypatch):
     messages = dummy_client.chat.completions.called_with["messages"]
     assert "Correction" in messages[1]["content"]
 
+
 @patch("services.openai_service.OpenAI")
 def test_generate_illustrations_returns_bytesio(mock_openai):
     mock_client = MagicMock()
@@ -77,20 +82,8 @@ def test_generate_illustrations_returns_bytesio(mock_openai):
         (),
         {
             "data": [
-                type(
-                    "Data",
-                    (),
-                    {
-                        "b64_json": base64.b64encode(b"img1").decode("utf-8")
-                    },
-                )(),
-                type(
-                    "Data",
-                    (),
-                    {
-                        "b64_json": base64.b64encode(b"img2").decode("utf-8")
-                    },
-                )(),
+                type("Data", (), {"b64_json": base64.b64encode(b"img1").decode("utf-8")})(),
+                type("Data", (), {"b64_json": base64.b64encode(b"img2").decode("utf-8")})(),
             ]
         },
     )()
@@ -112,48 +105,3 @@ def test_generate_illustrations_invalid_request(mock_openai):
 
     assert result == []
 
-
-def test_apply_corrections(monkeypatch):
-    class DummyCompletions:
-        def __init__(self):
-            self.called_with = None
-
-        def create(self, **kwargs):
-            self.called_with = kwargs
-            response = type(
-                "Response",
-                (),
-                {
-                    "choices": [
-                        type(
-                            "Choice",
-                            (),
-                            {
-                                "message": type(
-                                    "Msg", (), {"content": "Texte corrigé"}
-                                )()
-                            },
-                        )()
-                    ]
-                },
-            )
-            return response
-
-    class DummyClient:
-        def __init__(self):
-            self.chat = type("Chat", (), {"completions": DummyCompletions()})()
-
-    dummy_client = DummyClient()
-    monkeypatch.setattr("services.openai_service.OpenAI", lambda: dummy_client)
-    service = OpenAIService(DummyLogger())
-
-    text = "Bonjour le monde"
-    corrections = "Remplacer Bonjour par Salut"
-    result = service.apply_corrections(text, corrections)
-
-    assert result == "Texte corrigé"
-    messages = dummy_client.chat.completions.called_with["messages"]
-    expected_prompt = Path("prompt_system.txt").read_text(encoding="utf-8")
-    assert messages[0] == {"role": "system", "content": expected_prompt}
-    assert text in messages[1]["content"]
-    assert corrections in messages[1]["content"]

@@ -2,10 +2,11 @@ import base64
 import os
 from io import BytesIO
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 
 from openai import OpenAI, OpenAIError
 from config.log_config import log_execution
+from generate_post.prompt_builder import build_user_prompt
 
 
 class OpenAIService:
@@ -22,30 +23,71 @@ class OpenAIService:
         ).read_text(encoding="utf-8")
 
     @log_execution
-    def generate_post_versions(self, text: str) -> List[str]:
-        """Génère plusieurs versions d'un message."""
-        prompt = (
-            "Propose trois versions DISTINCTES du post suivant, chacune avec un ton et un style différents "
-            "(ex: professionnel, humoristique, percutant). Retourne les versions séparées par '---'.\n"
-            f"{text}"
-        )
+    def generate_event_post(self, text: str) -> Dict[str, object]:
+        """Génère les livrables A–E pour un texte d'événement donné."""
+        info = {"programme": text}
+        user_prompt = build_user_prompt(info)
+        messages = [
+            {"role": "system", "content": self.prompt_system},
+            {"role": "user", "content": user_prompt},
+        ]
         try:
-            messages = [
-                {"role": "system", "content": self.prompt_system},
-                {"role": "user", "content": prompt},
-            ]
             response = self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages,
-                temperature=1.0,
+                temperature=0.7,
             )
             content = response.choices[0].message.content
-            return [v.strip() for v in content.split("---") if v.strip()]
         except Exception as err:  # pragma: no cover - log then ignore
             self.logger.exception(
-                f"Erreur lors de la génération des versions : {err}"
+                f"Erreur lors de la génération du post : {err}"
             )
-            return []
+            return {
+                "standard": "",
+                "short": "",
+                "hooks": [],
+                "hashtags": [],
+                "thanks": "",
+            }
+
+        sections: Dict[str, object] = {
+            "standard": "",
+            "short": "",
+            "hooks": [],
+            "hashtags": [],
+            "thanks": "",
+        }
+        current = None
+        for line in content.splitlines():
+            line = line.strip()
+            if line.startswith("A)"):
+                current = "standard"
+                sections[current] = line[2:].strip()
+            elif line.startswith("B)"):
+                current = "short"
+                sections[current] = line[2:].strip()
+            elif line.startswith("C)"):
+                current = "hooks"
+                sections[current] = []
+                remainder = line[2:].strip()
+                if remainder:
+                    sections[current].append(remainder.lstrip("- "))
+            elif line.startswith("D)"):
+                current = "hashtags"
+                sections[current] = []
+                remainder = line[2:].strip()
+                if remainder:
+                    sections[current].append(remainder.lstrip("- "))
+            elif line.startswith("E)"):
+                current = "thanks"
+                sections[current] = line[2:].strip()
+            else:
+                if current in {"hooks", "hashtags"}:
+                    if line:
+                        sections[current].append(line.lstrip("- "))
+                elif current in {"standard", "short", "thanks"} and line:
+                    sections[current] += (" " + line)
+        return sections
 
     @log_execution
     def apply_corrections(self, text: str, corrections: str) -> str:

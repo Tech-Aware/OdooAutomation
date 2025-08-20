@@ -14,9 +14,15 @@ class DummyOpenAIService:
     def __init__(self, logger):
         self.logger = logger
 
-    def generate_post_versions(self, text):
+    def generate_event_post(self, text):
         assert text == "transcribed"
-        return ["version1"]
+        return {
+            "standard": "version1",
+            "short": "version2",
+            "hooks": [],
+            "hashtags": [],
+            "thanks": "",
+        }
 
     def apply_corrections(self, choice, corrections):
         assert choice == "version1"
