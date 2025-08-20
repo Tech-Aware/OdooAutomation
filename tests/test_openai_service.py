@@ -16,11 +16,11 @@ class DummyCompletions:
     def __init__(self, content=None):
         self.called_with = None
         self.content = content or (
-            "A) Version standard : **Texte standard**\n"
-            "B) Version courte : **Texte court**\n"
-            "C) accroche1\naccroche2\naccroche3\n"
-            "D) 1. #tag1\n2. #tag2\n"
-            "E) merci"
+            "Version standard:\nTexte standard\n\n"
+            "Version courte:\nTexte court\n\n"
+            "Accroches:\n- accroche1\n- accroche2\n- accroche3\n\n"
+            "Hashtags:\n#tag1 #tag2\n\n"
+            "Remerciements:\nmerci"
         )
 
     def create(self, **kwargs):
