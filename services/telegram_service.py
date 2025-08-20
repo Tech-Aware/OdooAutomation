@@ -197,6 +197,21 @@ class TelegramService:
             groups.append(choice)
         return groups
 
+    @log_execution
+    def ask_list(self, prompt: str, options: List[str]) -> List[str]:
+        """Permet de sélectionner plusieurs éléments dans ``options``."""
+        selected: List[str] = []
+        available = list(options)
+        while available:
+            choice = self.ask_options(
+                f"{prompt} ou Terminer", available + ["Terminer"]
+            )
+            if choice == "Terminer":
+                break
+            selected.append(choice)
+            available.remove(choice)
+        return selected
+
     async def _ask_images(self, prompt: str, images: List[BytesIO]) -> BytesIO:
         """Affiche des images avec un bouton de choix et renvoie l'image choisie."""
         assert self.loop is not None
