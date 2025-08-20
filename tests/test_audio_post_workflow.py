@@ -1,5 +1,4 @@
 from datetime import datetime
-
 from audio_post_workflow import main as workflow_main
 
 
@@ -127,6 +126,33 @@ def test_scheduling_flow(monkeypatch):
         SchedulingDummyTelegramService,
     )
 
+    schedule_args = {}
+
+    monkeypatch.setattr(
+        "audio_post_workflow.get_odoo_connection",
+        lambda: ("db", 1, "pwd", object()),
+    )
+    monkeypatch.setattr(
+        "audio_post_workflow.get_facebook_stream_id",
+        lambda models, db, uid, pwd: 99,
+    )
+
+    def fake_schedule(models, db, uid, pwd, stream_id, message, minutes_later):
+        schedule_args["params"] = (
+            models,
+            db,
+            uid,
+            pwd,
+            stream_id,
+            message,
+            minutes_later,
+        )
+
+    monkeypatch.setattr(
+        "audio_post_workflow.schedule_post",
+        fake_schedule,
+    )
+
     fb_service = DummyFacebookService(DummyLogger())
     monkeypatch.setattr(
         "audio_post_workflow.FacebookService", lambda logger: fb_service
@@ -137,4 +163,7 @@ def test_scheduling_flow(monkeypatch):
     assert fb_service.scheduled is not None
     assert fb_service.scheduled[0] == "fixed\nhttp://example.com"
     assert isinstance(fb_service.scheduled[1], datetime)
+    assert "params" in schedule_args
+    assert schedule_args["params"][5] == "fixed\nhttp://example.com"
+    assert isinstance(schedule_args["params"][6], int)
     assert fb_service.posted is None
