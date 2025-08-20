@@ -28,11 +28,13 @@ def get_facebook_stream_id(models, db, uid, password):
         )
         if not streams:
             logger.error("Aucun flux Facebook trouvé dans Odoo.")
-            raise Exception("Aucun flux Facebook trouvé")
-        stream_id = streams[0]['id']
-        logger.info(f"Flux Facebook sélectionné : {streams[0]['name']} (ID {stream_id})")
+            return None
+        stream_id = streams[0]["id"]
+        logger.info(
+            f"Flux Facebook sélectionné : {streams[0]['name']} (ID {stream_id})"
+        )
         return stream_id
-    except Exception as e:
+    except Exception as e:  # pragma: no cover - logging then propagate
         logger.exception(f"Erreur lors de la récupération du flux Facebook : {e}")
         raise
 
@@ -64,6 +66,9 @@ def main():
     try:
         db, uid, password, models = get_odoo_connection()
         stream_id = get_facebook_stream_id(models, db, uid, password)
+        if not stream_id:
+            logger.error("Impossible de planifier : aucun flux Facebook disponible.")
+            return
         post_message = "Votre message Facebook automatisé avec Odoo et Python 🚀"
         schedule_post(models, db, uid, password, stream_id, post_message)
         logger.info("Script terminé avec succès.")
