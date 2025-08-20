@@ -1,4 +1,5 @@
 import logging
+import unittest
 from unittest.mock import Mock, mock_open, patch
 import pytest
 import requests
@@ -57,6 +58,8 @@ class FacebookServiceTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+@patch.object(config, "FACEBOOK_PAGE_ID", "123")
+@patch.object(config, "PAGE_ACCESS_TOKEN", "token")
 @patch("services.facebook_service.requests.post")
 def test_post_without_image_uses_feed(mock_post):
     mock_response = Mock()
