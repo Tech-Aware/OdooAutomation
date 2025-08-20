@@ -38,10 +38,21 @@ def main() -> None:
             versions = openai_service.generate_post_versions(text)
             choice = telegram_service.ask_options("Choisissez la version", versions)
 
+            corrected = openai_service.correct_text(choice)
+            telegram_service.send_message(corrected)
+            if not telegram_service.ask_yes_no("Valider ce texte ?"):
+                continue
+            telegram_service.send_message("Texte confirmé")
+            link = telegram_service.ask_text("Ajoutez un lien (optionnel)")
+            if link:
+                telegram_service.send_message(link)
+                final_text = f"{corrected} {link}"
+            else:
+                final_text = corrected
 
             selected_image_path: str | None = None
             if telegram_service.ask_yes_no("Générer des illustrations ?"):
-                illustrations = openai_service.generate_illustrations(choice)
+                illustrations = openai_service.generate_illustrations(final_text)
                 if illustrations:
                     chosen_image = telegram_service.ask_image(
                         "Choisissez une illustration", illustrations
@@ -51,12 +62,11 @@ def main() -> None:
                         selected_image_path = "selected_image.png"
                         with open(selected_image_path, "wb") as fh:
                             fh.write(chosen_image.getvalue())
-
-            facebook_service.post_to_facebook_page(choice, selected_image_path)
+            facebook_service.post_to_facebook_page(final_text, selected_image_path)
             groups = telegram_service.ask_groups()
             if groups:
                 facebook_service.cross_post_to_groups(
-                    choice, groups, selected_image_path
+                    final_text, groups, selected_image_path
                 )
 
             logger.info("Publication terminée avec succès.")

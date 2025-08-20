@@ -156,6 +156,15 @@ class TelegramService:
         return response == "Oui"
 
     @log_execution
+    def ask_text(self, prompt: str) -> str:
+        """Demande un texte à l'utilisateur (implémentation simplifiée)."""
+        if not self.loop:
+            raise RuntimeError("Le bot Telegram n'est pas démarré")
+        # Cette méthode est simplifiée et renvoie une chaîne vide par défaut.
+        # Elle peut être surchargée ou mockée lors des tests.
+        return ""
+
+    @log_execution
     def ask_groups(self) -> List[str]:
         groups = []
         data = config.load_group_data()

@@ -48,6 +48,11 @@ class OpenAIService:
             return []
 
     @log_execution
+    def correct_text(self, text: str) -> str:
+        """Corrige le texte fourni (fonction factice pour les tests)."""
+        return text
+
+    @log_execution
     def generate_illustrations(self, prompt: str) -> List[BytesIO]:
         """Génère une liste d'illustrations en mémoire.
 
