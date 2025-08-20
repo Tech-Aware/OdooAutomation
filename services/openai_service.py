@@ -165,9 +165,17 @@ class OpenAIService:
 
         try:
             audio_file = BytesIO(audio_data)
+            # The OpenAI client expects a file-like object with a ``name`` attribute
+            # to correctly infer the audio format. Using a tuple can lead to the
+            # file being sent without proper headers, which results in the API
+            # failing to decode the audio content. By setting the ``name``
+            # attribute on the ``BytesIO`` object and passing it directly, the
+            # library uploads the data as a real file and Whisper can decode it.
+            audio_file.name = "voice.ogg"
+            audio_file.seek(0)
             response = self.client.audio.transcriptions.create(
                 model="whisper-1",
-                file=("voice.ogg", audio_file, "audio/ogg"),
+                file=audio_file,
             )
             return response.text.strip()
         except Exception as err:  # pragma: no cover - log then ignore
