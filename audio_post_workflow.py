@@ -10,11 +10,6 @@ from services.openai_service import OpenAIService
 from datetime import datetime, timedelta
 from services.telegram_service import TelegramService
 from services.facebook_service import FacebookService
-from schedule_post_in_odoo.schedule_facebook_post import (
-    get_facebook_stream_id,
-    schedule_post,
-)
-from config.odoo_connect import get_odoo_connection
 from config.log_config import setup_logger, log_execution
 
 
@@ -65,31 +60,6 @@ def main() -> None:
                         selected_image_path = "selected_image.png"
                         with open(selected_image_path, "wb") as fh:
                             fh.write(chosen_image.getvalue())
-            if telegram_service.ask_yes_no("Souhaitez-vous programmer la publication ?"):
-                db, uid, password, models = get_odoo_connection()
-                stream_id = get_facebook_stream_id(models, db, uid, password)
-                if not stream_id:
-                    telegram_service.send_message(
-                        "Aucun flux Facebook trouvé dans Odoo. Publication non planifiée."
-                    )
-                    logger.warning(
-                        "Demande de programmation ignorée : aucun flux Facebook disponible."
-                    )
-                    continue
-                now = datetime.utcnow()
-                target = now.replace(hour=20, minute=0, second=0, microsecond=0)
-                if now >= target:
-                    target = (now + timedelta(days=1)).replace(
-                        hour=8, minute=0, second=0, microsecond=0
-                    )
-                minutes_later = int((target - now).total_seconds() // 60)
-                schedule_post(
-                    models, db, uid, password, stream_id, choice, minutes_later
-                )
-                telegram_service.send_message("Publication planifiée.")
-                logger.info("Publication programmée avec succès.")
-                continue
-
             if telegram_service.ask_yes_no("Souhaitez-vous programmer la publication ?"):
                 now = datetime.utcnow()
                 target = now.replace(hour=20, minute=0, second=0, microsecond=0)

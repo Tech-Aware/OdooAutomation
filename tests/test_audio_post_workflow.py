@@ -109,7 +109,7 @@ class SchedulingDummyTelegramService(DummyTelegramService):
             "Faut-il corriger cette version ?": True,
             "Ajouter un lien ?": True,
             "Générer des illustrations ?": False,
-            "Souhaitez-vous programmer la publication ?": True,
+        "Souhaitez-vous programmer la publication ?": True,
         }
         return mapping.get(prompt, False)
 
@@ -126,33 +126,6 @@ def test_scheduling_flow(monkeypatch):
         SchedulingDummyTelegramService,
     )
 
-    schedule_args = {}
-
-    monkeypatch.setattr(
-        "audio_post_workflow.get_odoo_connection",
-        lambda: ("db", 1, "pwd", object()),
-    )
-    monkeypatch.setattr(
-        "audio_post_workflow.get_facebook_stream_id",
-        lambda models, db, uid, pwd: 99,
-    )
-
-    def fake_schedule(models, db, uid, pwd, stream_id, message, minutes_later):
-        schedule_args["params"] = (
-            models,
-            db,
-            uid,
-            pwd,
-            stream_id,
-            message,
-            minutes_later,
-        )
-
-    monkeypatch.setattr(
-        "audio_post_workflow.schedule_post",
-        fake_schedule,
-    )
-
     fb_service = DummyFacebookService(DummyLogger())
     monkeypatch.setattr(
         "audio_post_workflow.FacebookService", lambda logger: fb_service
@@ -160,64 +133,7 @@ def test_scheduling_flow(monkeypatch):
 
     workflow_main()
 
-    assert "params" in schedule_args
-    assert schedule_args["params"][5] == "fixed\nhttp://example.com"
-    assert isinstance(schedule_args["params"][6], int)
-    assert fb_service.scheduled is None
+    assert fb_service.scheduled is not None
     assert fb_service.posted is None
-
-
-class NoStreamTelegramService(SchedulingDummyTelegramService):
-    def __init__(self, logger, openai_service):
-        super().__init__(logger, openai_service)
-        self.messages = []
-
-    def send_message(self, msg):
-        self.messages.append(msg)
-
-
-def test_scheduling_without_stream(monkeypatch):
-    monkeypatch.setattr(
-        "audio_post_workflow.setup_logger", lambda name: DummyLogger()
-    )
-    monkeypatch.setattr(
-        "audio_post_workflow.OpenAIService", DummyOpenAIService
-    )
-
-    last_service = {}
-
-    def create_service(logger, openai_service):
-        service = NoStreamTelegramService(logger, openai_service)
-        last_service["instance"] = service
-        return service
-
-    monkeypatch.setattr(
-        "audio_post_workflow.TelegramService", create_service
-    )
-
-    monkeypatch.setattr(
-        "audio_post_workflow.get_odoo_connection",
-        lambda: ("db", 1, "pwd", object()),
-    )
-    monkeypatch.setattr(
-        "audio_post_workflow.get_facebook_stream_id", lambda *args: None
-    )
-
-    scheduled = {"called": False}
-
-    def fake_schedule(*args, **kwargs):
-        scheduled["called"] = True
-
-    monkeypatch.setattr(
-        "audio_post_workflow.schedule_post", fake_schedule
-    )
-
-    fb_service = DummyFacebookService(DummyLogger())
-    monkeypatch.setattr(
-        "audio_post_workflow.FacebookService", lambda logger: fb_service
-    )
-
-    workflow_main()
-
-    assert scheduled["called"] is False
-    assert any("flux Facebook" in msg for msg in last_service["instance"].messages)
+    assert fb_service.scheduled[0] == "fixed\nhttp://example.com"
+    assert isinstance(fb_service.scheduled[1], datetime)
