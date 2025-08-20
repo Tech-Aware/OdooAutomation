@@ -1,12 +1,11 @@
 # OdooAutomation
 
-Ce dépôt contient des scripts d'automatisation autour d'Odoo. On y génère des publications à l'aide d'OpenAI puis on peut les planifier directement dans Odoo.
+Ce dépôt contient des scripts d'automatisation autour d'Odoo. On y génère des publications à l'aide d'OpenAI puis on peut les publier ou les planifier sur Facebook via l'API Graph.
 
 ## Structure du projet
 
 - **config/** : connexion à Odoo, authentification, utilitaires OpenAI et configuration du logger.
 - **generate_post/** : scripts de génération de posts (Facebook, LinkedIn) basés sur ChatGPT. Les prompts sont stockés dans `prompts/`.
-- **schedule_post_in_odoo/** : script pour planifier une publication dans Odoo (exemple pour Facebook).
 - **pos_category_management/** : activation ou désactivation automatique des catégories du point de vente selon le jour (BUVETTE, EPICERIE, BUREAU le vendredi dès 6h ; BUVETTE, EPICERIE, BUREAU et FOURNIL le dimanche dès 6h).
 - **tests/** : quelques tests unitaires couvrant la configuration et l'intégration.
 
@@ -50,10 +49,6 @@ Ces variables permettent de se connecter à Odoo, à l'API OpenAI, à Facebook e
   ```bash
   python generate_post/generate_facebook_post.py
   python generate_post/generate_linkedin_post.py
-  ```
-- Planifier un post dans Odoo :
-  ```bash
-  python schedule_post_in_odoo/schedule_facebook_post.py
   ```
 - Mettre à jour automatiquement les catégories POS selon le jour :
   ```bash
