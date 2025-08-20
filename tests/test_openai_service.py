@@ -111,3 +111,49 @@ def test_generate_illustrations_invalid_request(mock_openai):
     result = service.generate_illustrations("prompt")
 
     assert result == []
+
+
+def test_apply_corrections(monkeypatch):
+    class DummyCompletions:
+        def __init__(self):
+            self.called_with = None
+
+        def create(self, **kwargs):
+            self.called_with = kwargs
+            response = type(
+                "Response",
+                (),
+                {
+                    "choices": [
+                        type(
+                            "Choice",
+                            (),
+                            {
+                                "message": type(
+                                    "Msg", (), {"content": "Texte corrigé"}
+                                )()
+                            },
+                        )()
+                    ]
+                },
+            )
+            return response
+
+    class DummyClient:
+        def __init__(self):
+            self.chat = type("Chat", (), {"completions": DummyCompletions()})()
+
+    dummy_client = DummyClient()
+    monkeypatch.setattr("services.openai_service.OpenAI", lambda: dummy_client)
+    service = OpenAIService(DummyLogger())
+
+    text = "Bonjour le monde"
+    corrections = "Remplacer Bonjour par Salut"
+    result = service.apply_corrections(text, corrections)
+
+    assert result == "Texte corrigé"
+    messages = dummy_client.chat.completions.called_with["messages"]
+    expected_prompt = Path("prompt_system.txt").read_text(encoding="utf-8")
+    assert messages[0] == {"role": "system", "content": expected_prompt}
+    assert text in messages[1]["content"]
+    assert corrections in messages[1]["content"]
