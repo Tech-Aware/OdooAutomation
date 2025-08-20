@@ -1,5 +1,6 @@
 import base64
 import os
+import re
 from io import BytesIO
 from pathlib import Path
 from typing import Dict, List
@@ -21,6 +22,23 @@ class OpenAIService:
         self.prompt_system = (
             Path(__file__).resolve().parents[1] / "prompt_system.txt"
         ).read_text(encoding="utf-8")
+        self.prompt_correction = (
+            "Tu es correcteur·rice pour des posts de réseaux sociaux. "
+            "Corrige le texte fourni selon les instructions et réponds "
+            "uniquement avec le texte final, sans autre commentaire."
+        )
+
+    @staticmethod
+    def _sanitize_text(text: str) -> str:
+        """Nettoie les éléments de mise en forme indésirables."""
+        cleaned = text.replace("*", "")
+        cleaned = re.sub(
+            r"(?i)voici le texte corrigé selon vos indications\s*:?", "", cleaned
+        )
+        cleaned = re.sub(r"(?i)version\s+(standard|courte)\s*:?", "", cleaned)
+        cleaned = re.sub(r"\b\d+\.\s*(#)", r"\1", cleaned)
+        cleaned = re.sub(r"\n{2,}", "\n", cleaned)
+        return cleaned.strip()
 
     @log_execution
     def generate_event_post(self, text: str) -> Dict[str, object]:
@@ -87,6 +105,11 @@ class OpenAIService:
                         sections[current].append(line.lstrip("- "))
                 elif current in {"standard", "short", "thanks"} and line:
                     sections[current] += (" " + line)
+        sections["standard"] = self._sanitize_text(sections["standard"])
+        sections["short"] = self._sanitize_text(sections["short"])
+        sections["hooks"] = [self._sanitize_text(h) for h in sections["hooks"]]
+        sections["hashtags"] = [self._sanitize_text(h) for h in sections["hashtags"]]
+        sections["thanks"] = self._sanitize_text(sections["thanks"])
         return sections
 
     @log_execution
@@ -111,17 +134,18 @@ class OpenAIService:
             f"Texte: {text}\n"
             f"Corrections: {corrections}"
         )
-        
+
         try:
             messages = [
-                {"role": "system", "content": self.prompt_system},
+                {"role": "system", "content": self.prompt_correction},
                 {"role": "user", "content": prompt},
             ]
             response = self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages,
             )
-            return response.choices[0].message.content.strip()
+            content = response.choices[0].message.content.strip()
+            return self._sanitize_text(content)
         except Exception as err:  # pragma: no cover - log then ignore
             self.logger.exception(
                 f"Erreur lors de l'application des corrections : {err}"
