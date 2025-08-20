@@ -1,5 +1,6 @@
 import base64
 from io import BytesIO
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import openai
@@ -49,8 +50,10 @@ def test_generate_post_versions(monkeypatch):
 
     assert versions == ["A", "B", "C"]
     assert dummy_client.chat.completions.called_with["temperature"] >= 1.0
-    prompt = dummy_client.chat.completions.called_with["messages"][0]["content"]
-    assert "versions DISTINCTES" in prompt
+    messages = dummy_client.chat.completions.called_with["messages"]
+    expected_prompt = Path("prompt_system.txt").read_text(encoding="utf-8")
+    assert messages[0] == {"role": "system", "content": expected_prompt}
+    assert "versions DISTINCTES" in messages[1]["content"]
 
 @patch("services.openai_service.OpenAI")
 def test_generate_illustrations_returns_bytesio(mock_openai):

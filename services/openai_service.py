@@ -1,6 +1,7 @@
 import base64
 import os
 from io import BytesIO
+from pathlib import Path
 from typing import List
 
 from openai import OpenAI, OpenAIError
@@ -16,6 +17,9 @@ class OpenAIService:
     def __init__(self, logger) -> None:
         self.logger = logger
         self.client = OpenAI()
+        self.prompt_system = (
+            Path(__file__).resolve().parents[1] / "prompt_system.txt"
+        ).read_text(encoding="utf-8")
 
     @log_execution
     def generate_post_versions(self, text: str) -> List[str]:
@@ -26,9 +30,13 @@ class OpenAIService:
             f"{text}"
         )
         try:
+            messages = [
+                {"role": "system", "content": self.prompt_system},
+                {"role": "user", "content": prompt},
+            ]
             response = self.client.chat.completions.create(
                 model="gpt-4o-mini",
-                messages=[{"role": "user", "content": prompt}],
+                messages=messages,
                 temperature=1.0,
             )
             content = response.choices[0].message.content
