@@ -35,6 +35,7 @@ class TelegramService:
             MessageHandler(
                 filters.TEXT & ~filters.COMMAND & filters.User(self.allowed_user_id),
                 self._text_handler,
+                filters.TEXT & filters.User(self.allowed_user_id), self._text_handler
             )
         )
         self.app.add_handler(CallbackQueryHandler(self._callback_handler))
@@ -125,7 +126,7 @@ class TelegramService:
             raise RuntimeError("Le bot Telegram n'est pas démarré")
         self.send_message(prompt)
         return asyncio.run_coroutine_threadsafe(self._wait_text(), self.loop).result()
-
+    
     # ------------------------------------------------------------------
     # Questions avec boutons
     # ------------------------------------------------------------------
