@@ -109,18 +109,36 @@ class TelegramService:
         await update.callback_query.edit_message_reply_markup(None)
 
     async def _ask(self, prompt: str, options: List[str]) -> str:
+        """Affiche les options numérotées puis propose un clavier de choix."""
         assert self.loop is not None
         self._callback_future = self.loop.create_future()
+
+        # Mapping pour récupérer l'option complète à partir de l'index choisi
         mapping = {str(i): opt for i, opt in enumerate(options)}
+
+        # Construction du message listant toutes les options
+        message_text = f"{prompt}\n\n" + "\n\n".join(
+            f"{i+1}. {opt}" for i, opt in enumerate(options)
+        )
+
+        # Clavier contenant uniquement des boutons numérotés
         keyboard = [
-            [InlineKeyboardButton(opt, callback_data=str(i))]
-            for i, opt in enumerate(options)
+            [InlineKeyboardButton(str(i + 1), callback_data=str(i))]
+            for i in range(len(options))
         ]
+
+        # Envoi du message avec toutes les options
+        await self.app.bot.send_message(
+            chat_id=self.allowed_user_id, text=message_text
+        )
+
+        # Envoi du message avec les boutons de choix
         await self.app.bot.send_message(
             chat_id=self.allowed_user_id,
-            text=prompt,
+            text="Choisissez une option :",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
+
         answer_key = await self._callback_future
         return mapping[answer_key]
 
