@@ -35,7 +35,6 @@ class TelegramService:
             MessageHandler(
                 filters.TEXT & ~filters.COMMAND & filters.User(self.allowed_user_id),
                 self._text_handler,
-                filters.TEXT & filters.User(self.allowed_user_id), self._text_handler
             )
         )
         self.app.add_handler(CallbackQueryHandler(self._callback_handler))
