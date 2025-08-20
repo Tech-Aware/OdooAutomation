@@ -78,7 +78,7 @@ class OpenAIService:
             response = self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages,
-
+            )
             return response.choices[0].message.content.strip()
         except Exception as err:  # pragma: no cover - log then ignore
             self.logger.exception(
