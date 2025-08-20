@@ -69,7 +69,7 @@ class OpenAIService:
             f"Texte: {text}\n"
             f"Corrections: {corrections}"
         )
-
+        
         try:
             messages = [
                 {"role": "system", "content": self.prompt_system},
@@ -78,8 +78,7 @@ class OpenAIService:
             response = self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages,
-                temperature=0.0,
-            )
+
             return response.choices[0].message.content.strip()
         except Exception as err:  # pragma: no cover - log then ignore
             self.logger.exception(

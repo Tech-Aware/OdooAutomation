@@ -31,9 +31,17 @@ class TelegramService:
                 filters.VOICE & filters.User(self.allowed_user_id), self._voice_handler
             )
         )
+        self.app.add_handler(
+            MessageHandler(
+                filters.TEXT & ~filters.COMMAND & filters.User(self.allowed_user_id),
+                self._text_handler,
+                filters.TEXT & filters.User(self.allowed_user_id), self._text_handler
+            )
+        )
         self.app.add_handler(CallbackQueryHandler(self._callback_handler))
         self.loop: asyncio.AbstractEventLoop | None = None
         self._voice_future: asyncio.Future[str] | None = None
+        self._text_future: asyncio.Future[str] | None = None
         self._callback_future: asyncio.Future[str] | None = None
         self._thread: threading.Thread | None = None
 
@@ -97,6 +105,28 @@ class TelegramService:
             raise RuntimeError("Le bot Telegram n'est pas démarré")
         return asyncio.run_coroutine_threadsafe(self._wait_voice(), self.loop).result()
 
+    # ------------------------------------------------------------------
+    # Gestion des messages textes
+    # ------------------------------------------------------------------
+    async def _text_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        if not (update.message and update.message.text):
+            return
+        if self._text_future is None or self._text_future.done():
+            return
+        self._text_future.set_result(update.message.text)
+
+    async def _wait_text(self) -> str:
+        assert self.loop is not None
+        self._text_future = self.loop.create_future()
+        return await self._text_future
+
+    @log_execution
+    def ask_text(self, prompt: str) -> str:
+        if not self.loop:
+            raise RuntimeError("Le bot Telegram n'est pas démarré")
+        self.send_message(prompt)
+        return asyncio.run_coroutine_threadsafe(self._wait_text(), self.loop).result()
+    
     # ------------------------------------------------------------------
     # Questions avec boutons
     # ------------------------------------------------------------------
