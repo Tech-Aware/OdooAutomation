@@ -48,6 +48,31 @@ class OpenAIService:
             return []
 
     @log_execution
+    def apply_corrections(self, text: str, corrections: str) -> str:
+        """Applique des corrections fournies à un texte."""
+        prompt = (
+            "Voici un texte et des instructions de correction. Réécris le texte en appliquant ces corrections.\n"
+            f"Texte :\n{text}\n"
+            f"Corrections :\n{corrections}"
+        )
+        try:
+            messages = [
+                {"role": "system", "content": self.prompt_system},
+                {"role": "user", "content": prompt},
+            ]
+            response = self.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                temperature=0.7,
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as err:  # pragma: no cover - log then ignore
+            self.logger.exception(
+                f"Erreur lors de l'application des corrections : {err}"
+            )
+            return text
+
+    @log_execution
     def generate_illustrations(self, prompt: str) -> List[BytesIO]:
         """Génère une liste d'illustrations en mémoire.
 
