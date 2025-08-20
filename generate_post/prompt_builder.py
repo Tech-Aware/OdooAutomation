@@ -28,9 +28,18 @@ def build_user_prompt(info: Dict[str, str]) -> str:
     Missing fields are replaced by empty strings to avoid hallucinations.
     """
     with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
-        template = f.read()
+        lines = f.readlines()
     fields = _FIELDS.copy()
     for key, value in info.items():
         if key in fields and value is not None:
             fields[key] = value
+
+    # Remove lines whose placeholders have empty values
+    kept_lines = []
+    for line in lines:
+        if any(f"{{{key}}}" in line and not fields[key].strip() for key in fields):
+            continue
+        kept_lines.append(line)
+
+    template = "".join(kept_lines)
     return template.format(**fields)
