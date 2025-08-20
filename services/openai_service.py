@@ -90,41 +90,39 @@ class OpenAIService:
             "hashtags": [],
             "thanks": "",
         }
-        current = None
-        for line in content.splitlines():
-            line = line.strip()
-            if line.startswith("A)"):
-                current = "standard"
-                sections[current] = line[2:].strip()
-            elif line.startswith("B)"):
-                current = "short"
-                sections[current] = line[2:].strip()
-            elif line.startswith("C)"):
-                current = "hooks"
-                sections[current] = []
-                remainder = line[2:].strip()
-                if remainder:
-                    sections[current].append(remainder.lstrip("- "))
-            elif line.startswith("D)"):
-                current = "hashtags"
-                sections[current] = []
-                remainder = line[2:].strip()
-                if remainder:
-                    sections[current].append(remainder.lstrip("- "))
-            elif line.startswith("E)"):
-                current = "thanks"
-                sections[current] = line[2:].strip()
-            else:
-                if current in {"hooks", "hashtags"}:
-                    if line:
-                        sections[current].append(line.lstrip("- "))
-                elif current in {"standard", "short", "thanks"} and line:
-                    sections[current] += (" " + line)
-        sections["standard"] = self._sanitize_text(sections["standard"])
-        sections["short"] = self._sanitize_text(sections["short"])
-        sections["hooks"] = [self._sanitize_text(h) for h in sections["hooks"]]
-        sections["hashtags"] = [self._sanitize_text(h) for h in sections["hashtags"]]
-        sections["thanks"] = self._sanitize_text(sections["thanks"])
+
+        parts = [p.strip() for p in re.split(r"\n\s*\n", content) if p.strip()]
+
+        def _remove_heading(text: str, heading: str) -> str:
+            lines = text.splitlines()
+            if lines and lines[0].lower().startswith(heading):
+                return "\n".join(lines[1:]).strip()
+            return text
+
+        if parts:
+            sections["standard"] = self._sanitize_text(
+                _remove_heading(parts[0], "version standard")
+            )
+        if len(parts) > 1:
+            sections["short"] = self._sanitize_text(
+                _remove_heading(parts[1], "version courte")
+            )
+        if len(parts) > 2:
+            hooks_text = _remove_heading(parts[2], "accroches")
+            hooks_lines = [
+                line.lstrip("-• ").strip() for line in hooks_text.splitlines() if line.strip()
+            ]
+            sections["hooks"] = [self._sanitize_text(h) for h in hooks_lines]
+        if len(parts) > 3:
+            hashtags_text = _remove_heading(parts[3], "hashtags")
+            tokens: List[str] = []
+            for line in hashtags_text.splitlines():
+                tokens.extend(tag for tag in line.split() if tag.startswith("#"))
+            sections["hashtags"] = [self._sanitize_text(tag) for tag in tokens]
+        if len(parts) > 4:
+            sections["thanks"] = self._sanitize_text(
+                _remove_heading(parts[4], "remerciements")
+            )
         return sections
 
     @log_execution
