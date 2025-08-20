@@ -36,6 +36,22 @@ def test_ask_image_returns_selected_image(mock_app):
 
 
 @patch("services.telegram_service.Application")
+def test_ask_list_collects_choices(mock_app):
+    builder = MagicMock()
+    builder.token.return_value = builder
+    app = MagicMock()
+    builder.build.return_value = app
+    mock_app.builder.return_value = builder
+
+    service = TelegramService(MagicMock())
+    service.ask_options = MagicMock(side_effect=["a", "b", "Terminer"])
+
+    result = service.ask_list("prompt", ["a", "b", "c"])
+    assert result == ["a", "b"]
+    assert service.ask_options.call_count == 3
+
+
+@patch("services.telegram_service.Application")
 def test_ask_text_returns_user_input(mock_app):
     builder = MagicMock()
     builder.token.return_value = builder
