@@ -19,15 +19,24 @@ class DummyOpenAIService:
         return {
             "standard": "version1",
             "short": "version2",
-            "hooks": [],
-            "hashtags": [],
+            "hooks": ["hook1", "hook2", "hook3"],
+            "hashtags": [
+                "#tag1",
+                "#tag2",
+                "#tag3",
+                "#tag4",
+                "#tag5",
+            ],
             "thanks": "",
         }
 
     def apply_corrections(self, choice, corrections):
-        assert choice == "version1"
+        assert (
+            choice
+            == "hook1\n\nversion1\n\n#tag1\nhttp://example.com"
+        )
         assert corrections == "fix"
-        return "fixed"
+        return "hook1\n\nfixed\n\n#tag1\nhttp://example.com"
 
     def generate_illustrations(self, prompt):
         return []
@@ -37,7 +46,8 @@ class DummyTelegramService:
     def __init__(self, logger, openai_service):
         self.logger = logger
         self.openai_service = openai_service
-        self._step = 0
+        self._voice_step = 0
+        self._option_step = 0
 
     def start(self):
         pass
@@ -46,19 +56,30 @@ class DummyTelegramService:
         pass
 
     def wait_for_voice_message(self):
-        if self._step == 0:
-            self._step += 1
+        if self._voice_step == 0:
+            self._voice_step += 1
             return "transcribed"
         return ""
 
     def ask_options(self, prompt, options):
-        return options[0]
+        responses = [
+            options[0],  # version
+            options[0],  # hook
+            options[0],  # hashtag selection
+            "Terminer",  # finish hashtag selection
+        ]
+        response = responses[self._option_step]
+        self._option_step += 1
+        return response
+
+    def ask_list(self, prompt, options):
+        return ["#tag1"]
 
     def ask_yes_no(self, prompt):
         mapping = {
-            "Faut-il corriger cette version ?": True,
             "Ajouter un lien ?": True,
             "Générer des illustrations ?": False,
+            "Faut-il corriger ce post ?": True,
             "Souhaitez-vous programmer la publication ?": False,
         }
         return mapping.get(prompt, False)
@@ -106,16 +127,19 @@ def test_main_flow(monkeypatch):
 
     workflow_main()
 
-    assert fb_service.posted == ("fixed\nhttp://example.com", None)
+    assert fb_service.posted == (
+        "hook1\n\nfixed\n\n#tag1\nhttp://example.com",
+        None,
+    )
 
 
 class SchedulingDummyTelegramService(DummyTelegramService):
     def ask_yes_no(self, prompt):
         mapping = {
-            "Faut-il corriger cette version ?": True,
             "Ajouter un lien ?": True,
             "Générer des illustrations ?": False,
-        "Souhaitez-vous programmer la publication ?": True,
+            "Faut-il corriger ce post ?": True,
+            "Souhaitez-vous programmer la publication ?": True,
         }
         return mapping.get(prompt, False)
 
@@ -141,5 +165,8 @@ def test_scheduling_flow(monkeypatch):
 
     assert fb_service.scheduled is not None
     assert fb_service.posted is None
-    assert fb_service.scheduled[0] == "fixed\nhttp://example.com"
+    assert (
+        fb_service.scheduled[0]
+        == "hook1\n\nfixed\n\n#tag1\nhttp://example.com"
+    )
     assert isinstance(fb_service.scheduled[1], datetime)
