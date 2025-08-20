@@ -7,7 +7,7 @@ désormais réalisées via un véritable bot Telegram.
 """
 
 from services.openai_service import OpenAIService
-import asyncio
+from datetime import datetime, timedelta
 from services.telegram_service import TelegramService
 from services.facebook_service import FacebookService
 from config.log_config import setup_logger, log_execution
@@ -60,6 +60,19 @@ def main() -> None:
                         selected_image_path = "selected_image.png"
                         with open(selected_image_path, "wb") as fh:
                             fh.write(chosen_image.getvalue())
+            if telegram_service.ask_yes_no("Souhaitez-vous programmer la publication ?"):
+                now = datetime.utcnow()
+                target = now.replace(hour=20, minute=0, second=0, microsecond=0)
+                if now >= target:
+                    target = (now + timedelta(days=1)).replace(
+                        hour=8, minute=0, second=0, microsecond=0
+                    )
+                facebook_service.schedule_post_to_facebook_page(
+                    choice, target, selected_image_path
+                )
+                telegram_service.send_message("Publication planifiée.")
+                logger.info("Publication programmée avec succès.")
+                continue
 
             facebook_service.post_to_facebook_page(choice, selected_image_path)
             groups = telegram_service.ask_groups()
