@@ -68,6 +68,14 @@ def main() -> None:
             if telegram_service.ask_yes_no("Souhaitez-vous programmer la publication ?"):
                 db, uid, password, models = get_odoo_connection()
                 stream_id = get_facebook_stream_id(models, db, uid, password)
+                if not stream_id:
+                    telegram_service.send_message(
+                        "Aucun flux Facebook trouvé dans Odoo. Publication non planifiée."
+                    )
+                    logger.warning(
+                        "Demande de programmation ignorée : aucun flux Facebook disponible."
+                    )
+                    continue
                 now = datetime.utcnow()
                 target = now.replace(hour=20, minute=0, second=0, microsecond=0)
                 if now >= target:
