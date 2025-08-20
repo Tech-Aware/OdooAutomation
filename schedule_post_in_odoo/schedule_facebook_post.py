@@ -27,7 +27,7 @@ def get_facebook_stream_id(models, db, uid, password):
             {'fields': ['id', 'name']}
         )
         if not streams:
-            logger.error("Aucun flux Facebook trouvé dans Odoo.")
+            logger.warning("Aucun flux Facebook trouvé dans Odoo.")
             return None
         stream_id = streams[0]["id"]
         logger.info(
