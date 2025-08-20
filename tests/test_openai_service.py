@@ -67,8 +67,19 @@ def test_generate_event_post(monkeypatch):
 
 def test_apply_corrections(monkeypatch):
     raw = (
-        "Voici le texte corrigé selon vos indications :\n\n"
-        "**Texte corrigé**\n\n1. #tag1\n2. #tag2"
+        "Voici le texte corrigé selon vos indications :\n"
+        "1. 🎉 Texte corrigé\n"
+        "\n"
+        "(120–220 mots) Ceci est un paragraphe.\n"
+        "\n"
+        "🔗 [À compléter : liens utiles]\n"
+        "---\n"
+        "#tag1\n"
+        "#tag2\n"
+        "5 hashtags proposés\n"
+        "1. #tag1\n"
+        "2. #tag2\n"
+        "Si vous avez besoin d'autres informations, n'hésitez pas à demander !"
     )
     dummy_client = DummyClient(content=raw)
     monkeypatch.setattr("services.openai_service.OpenAI", lambda: dummy_client)
@@ -76,7 +87,7 @@ def test_apply_corrections(monkeypatch):
 
     result = service.apply_corrections("Original", "Correction")
 
-    assert result == "Texte corrigé\n#tag1\n#tag2"
+    assert result == "🎉 Texte corrigé\n\nCeci est un paragraphe.\n\n#tag1 #tag2"
     messages = dummy_client.chat.completions.called_with["messages"]
     assert "Correction" in messages[1]["content"]
 

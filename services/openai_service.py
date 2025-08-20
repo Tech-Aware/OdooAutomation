@@ -25,7 +25,10 @@ class OpenAIService:
         self.prompt_correction = (
             "Tu es correcteur·rice pour des posts de réseaux sociaux. "
             "Corrige le texte fourni selon les instructions et réponds "
-            "uniquement avec le texte final, sans autre commentaire."
+            "uniquement avec le texte final, sans astérisques, sans préambule "
+            "ni mention de version, de compteur de mots, de numéro d'élément "
+            "ou de lien factice, et sans commentaire supplémentaire. "
+            "Fournis simplement le texte terminé suivi des hashtags sur une seule ligne."
         )
 
     @staticmethod
@@ -36,9 +39,30 @@ class OpenAIService:
             r"(?i)voici le texte corrigé selon vos indications\s*:?", "", cleaned
         )
         cleaned = re.sub(r"(?i)version\s+(standard|courte)\s*:?", "", cleaned)
+        cleaned = re.sub(r"\(\s*\d+\s*[–-]\s*\d+\s*mots\s*\)", "", cleaned)
+        cleaned = re.sub(r"(?mi)^\s*\d+\.\s*", "", cleaned)
+        cleaned = re.sub(r"(?mi)^\s*🔗.*$", "", cleaned)
+        cleaned = re.sub(r"(?mi)^\s*[-–]{3,}\s*$", "", cleaned)
         cleaned = re.sub(r"\b\d+\.\s*(#)", r"\1", cleaned)
-        cleaned = re.sub(r"\n{2,}", "\n", cleaned)
-        return cleaned.strip()
+        cleaned = re.sub(r"(?mi)^\s*\d+\s*hashtags?\s+propos[ée]s?.*$", "", cleaned)
+        cleaned = re.sub(r"(?mi)^si vous avez besoin.*$", "", cleaned)
+
+        lines = cleaned.splitlines()
+        hashtags: List[str] = []
+        new_lines: List[str] = []
+        for line in lines:
+            stripped = line.strip()
+            if not stripped:
+                new_lines.append("")
+            elif stripped.startswith("#"):
+                hashtags.extend(part for part in stripped.split() if part.startswith("#"))
+            else:
+                new_lines.append(stripped)
+        text_body = "\n".join(new_lines).strip()
+        if hashtags:
+            tag_line = " ".join(dict.fromkeys(hashtags))
+            text_body = f"{text_body}\n\n{tag_line}" if text_body else tag_line
+        return text_body
 
     @log_execution
     def generate_event_post(self, text: str) -> Dict[str, object]:
