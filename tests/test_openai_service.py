@@ -16,7 +16,11 @@ class DummyCompletions:
     def __init__(self, content=None):
         self.called_with = None
         self.content = content or (
-            "A) standard\nB) short\nC) accroche1\naccroche2\naccroche3\nD) #tag1 #tag2\nE) merci"
+            "A) Version standard : **Texte standard**\n"
+            "B) Version courte : **Texte court**\n"
+            "C) accroche1\naccroche2\naccroche3\n"
+            "D) 1. #tag1\n2. #tag2\n"
+            "E) merci"
         )
 
     def create(self, **kwargs):
@@ -51,10 +55,10 @@ def test_generate_event_post(monkeypatch):
 
     result = service.generate_event_post("Mon programme")
 
-    assert result["standard"] == "standard"
-    assert result["short"] == "short"
+    assert result["standard"] == "Texte standard"
+    assert result["short"] == "Texte court"
     assert result["hooks"] == ["accroche1", "accroche2", "accroche3"]
-    assert result["hashtags"] in [["#tag1 #tag2"], ["#tag1", "#tag2"]]
+    assert result["hashtags"] == ["#tag1", "#tag2"]
     messages = dummy_client.chat.completions.called_with["messages"]
     expected_prompt = Path("prompt_system.txt").read_text(encoding="utf-8")
     assert messages[0] == {"role": "system", "content": expected_prompt}
@@ -62,13 +66,17 @@ def test_generate_event_post(monkeypatch):
 
 
 def test_apply_corrections(monkeypatch):
-    dummy_client = DummyClient(content="Texte corrigé")
+    raw = (
+        "Voici le texte corrigé selon vos indications :\n\n"
+        "**Texte corrigé**\n\n1. #tag1\n2. #tag2"
+    )
+    dummy_client = DummyClient(content=raw)
     monkeypatch.setattr("services.openai_service.OpenAI", lambda: dummy_client)
     service = OpenAIService(DummyLogger())
 
     result = service.apply_corrections("Original", "Correction")
 
-    assert result == "Texte corrigé"
+    assert result == "Texte corrigé\n#tag1\n#tag2"
     messages = dummy_client.chat.completions.called_with["messages"]
     assert "Correction" in messages[1]["content"]
 
