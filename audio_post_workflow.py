@@ -38,6 +38,15 @@ def main() -> None:
             versions = openai_service.generate_post_versions(text)
             choice = telegram_service.ask_options("Choisissez la version", versions)
 
+            if telegram_service.ask_yes_no("Faut-il corriger cette version ?"):
+                corrections = telegram_service.ask_text("Envoyez les corrections :")
+                choice = openai_service.apply_corrections(choice, corrections)
+                telegram_service.send_message(choice)
+
+            if telegram_service.ask_yes_no("Ajouter un lien ?"):
+                link = telegram_service.ask_text("Quel lien ajouter ?")
+                choice = f"{choice}\n{link}"
+                telegram_service.send_message(choice)
 
             selected_image_path: str | None = None
             if telegram_service.ask_yes_no("Générer des illustrations ?"):

@@ -33,6 +33,8 @@ class TelegramService:
         )
         self.app.add_handler(
             MessageHandler(
+                filters.TEXT & ~filters.COMMAND & filters.User(self.allowed_user_id),
+                self._text_handler,
                 filters.TEXT & filters.User(self.allowed_user_id), self._text_handler
             )
         )
@@ -104,11 +106,9 @@ class TelegramService:
         return asyncio.run_coroutine_threadsafe(self._wait_voice(), self.loop).result()
 
     # ------------------------------------------------------------------
-    # Gestion des messages texte
+    # Gestion des messages textes
     # ------------------------------------------------------------------
-    async def _text_handler(
-        self, update: Update, context: ContextTypes.DEFAULT_TYPE
-    ) -> None:
+    async def _text_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not (update.message and update.message.text):
             return
         if self._text_future is None or self._text_future.done():
@@ -121,16 +121,12 @@ class TelegramService:
         return await self._text_future
 
     @log_execution
-    def wait_for_text_message(self) -> str:
+    def ask_text(self, prompt: str) -> str:
         if not self.loop:
             raise RuntimeError("Le bot Telegram n'est pas démarré")
-        return asyncio.run_coroutine_threadsafe(self._wait_text(), self.loop).result()
-
-    @log_execution
-    def ask_text(self, prompt: str) -> str:
         self.send_message(prompt)
-        return self.wait_for_text_message()
-
+        return asyncio.run_coroutine_threadsafe(self._wait_text(), self.loop).result()
+    
     # ------------------------------------------------------------------
     # Questions avec boutons
     # ------------------------------------------------------------------

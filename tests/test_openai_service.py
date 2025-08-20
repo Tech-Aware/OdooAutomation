@@ -13,8 +13,9 @@ class DummyLogger:
 
 
 class DummyCompletions:
-    def __init__(self):
+    def __init__(self, content="A---B---C"):
         self.called_with = None
+        self.content = content
 
     def create(self, **kwargs):
         self.called_with = kwargs
@@ -27,7 +28,7 @@ class DummyCompletions:
                         "Choice",
                         (),
                         {
-                            "message": type("Msg", (), {"content": "A---B---C"})()
+                            "message": type("Msg", (), {"content": self.content})()
                         },
                     )()
                 ]
@@ -37,8 +38,8 @@ class DummyCompletions:
 
 
 class DummyClient:
-    def __init__(self):
-        self.chat = type("Chat", (), {"completions": DummyCompletions()})()
+    def __init__(self, content="A---B---C"):
+        self.chat = type("Chat", (), {"completions": DummyCompletions(content)})()
 
 
 def test_generate_post_versions(monkeypatch):
@@ -54,6 +55,18 @@ def test_generate_post_versions(monkeypatch):
     expected_prompt = Path("prompt_system.txt").read_text(encoding="utf-8")
     assert messages[0] == {"role": "system", "content": expected_prompt}
     assert "versions DISTINCTES" in messages[1]["content"]
+
+
+def test_apply_corrections(monkeypatch):
+    dummy_client = DummyClient(content="Texte corrigé")
+    monkeypatch.setattr("services.openai_service.OpenAI", lambda: dummy_client)
+    service = OpenAIService(DummyLogger())
+
+    result = service.apply_corrections("Original", "Correction")
+
+    assert result == "Texte corrigé"
+    messages = dummy_client.chat.completions.called_with["messages"]
+    assert "Correction" in messages[1]["content"]
 
 @patch("services.openai_service.OpenAI")
 def test_generate_illustrations_returns_bytesio(mock_openai):
