@@ -7,7 +7,6 @@ désormais réalisées via un véritable bot Telegram.
 """
 
 from services.openai_service import OpenAIService
-import asyncio
 from datetime import datetime, timedelta
 from services.telegram_service import TelegramService
 from services.facebook_service import FacebookService
@@ -78,6 +77,20 @@ def main() -> None:
                 minutes_later = int((target - now).total_seconds() // 60)
                 schedule_post(
                     models, db, uid, password, stream_id, choice, minutes_later
+                )
+                telegram_service.send_message("Publication planifiée.")
+                logger.info("Publication programmée avec succès.")
+                continue
+
+            if telegram_service.ask_yes_no("Souhaitez-vous programmer la publication ?"):
+                now = datetime.utcnow()
+                target = now.replace(hour=20, minute=0, second=0, microsecond=0)
+                if now >= target:
+                    target = (now + timedelta(days=1)).replace(
+                        hour=8, minute=0, second=0, microsecond=0
+                    )
+                facebook_service.schedule_post_to_facebook_page(
+                    choice, target, selected_image_path
                 )
                 telegram_service.send_message("Publication planifiée.")
                 logger.info("Publication programmée avec succès.")

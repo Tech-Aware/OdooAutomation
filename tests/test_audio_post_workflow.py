@@ -1,3 +1,4 @@
+from datetime import datetime
 from audio_post_workflow import main as workflow_main
 
 
@@ -70,9 +71,13 @@ class DummyFacebookService:
     def __init__(self, logger):
         self.logger = logger
         self.posted = None
+        self.scheduled = None
 
     def post_to_facebook_page(self, text, image_path):
         self.posted = (text, image_path)
+
+    def schedule_post_to_facebook_page(self, text, publish_time, image_path):
+        self.scheduled = (text, publish_time, image_path)
 
     def cross_post_to_groups(self, text, groups, image_path):
         pass
@@ -155,6 +160,9 @@ def test_scheduling_flow(monkeypatch):
 
     workflow_main()
 
+    assert fb_service.scheduled is not None
+    assert fb_service.scheduled[0] == "fixed\nhttp://example.com"
+    assert isinstance(fb_service.scheduled[1], datetime)
     assert "params" in schedule_args
     assert schedule_args["params"][5] == "fixed\nhttp://example.com"
     assert isinstance(schedule_args["params"][6], int)
