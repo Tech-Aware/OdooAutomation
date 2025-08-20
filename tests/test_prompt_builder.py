@@ -13,5 +13,5 @@ def test_build_user_prompt_fills_fields():
     assert "14 juillet" in prompt
     assert "18h-23h" in prompt
     assert "Place du village" in prompt
-    # fields not provided become empty strings
-    assert "- Programme : " in prompt
+    # fields not provided are omitted entirely
+    assert "- Programme : " not in prompt
