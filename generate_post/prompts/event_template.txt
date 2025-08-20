@@ -1,0 +1,15 @@
+Génère les livrables A–E selon les règles système ci-dessus.
+Infos connues (copie-colle brut ci-dessous ; n’ajoute rien qui n’y figure pas) :
+
+- Objet/nom : {objet}
+- Date : {date}
+- Horaires : {horaires}
+- Lieu : {lieu}
+- Programme : {programme}
+- Restauration : {restauration}
+- Tarifs : {tarifs}
+- Réservation (site/SMS/mail/buvette) : {reservation}
+- Deadline de réservation : {deadline}
+- Besoin de bénévoles (rôles/durée/avantages) : {benevoles}
+- Liens utiles (max 3) : {liens}
+- Contexte (annonce, rappel dernière minute, remerciements, dépôt de pain, multi-nouvelles) : {contexte}

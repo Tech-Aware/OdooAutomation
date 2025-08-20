@@ -35,8 +35,19 @@ def main() -> None:
             break
 
         try:
-            versions = openai_service.generate_post_versions(text)
+            package = openai_service.generate_event_post(text)
+            versions = [package.get("standard", ""), package.get("short", "")]
             choice = telegram_service.ask_options("Choisissez la version", versions)
+            hooks = package.get("hooks", [])
+            hashtags = package.get("hashtags", [])
+            if hooks:
+                telegram_service.send_message(
+                    "Accroches alternatives:\n" + "\n".join(f"- {h}" for h in hooks)
+                )
+            if hashtags:
+                telegram_service.send_message(
+                    "Hashtags proposés: " + " ".join(hashtags)
+                )
 
             if telegram_service.ask_yes_no("Faut-il corriger cette version ?"):
                 corrections = telegram_service.ask_text("Envoyez les corrections :")
