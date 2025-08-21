@@ -13,6 +13,7 @@ class DummyLogger:
 class DummyOpenAIService:
     def __init__(self, logger):
         self.logger = logger
+        self.corrected = None
 
     def generate_event_post(self, text):
         assert text == "transcribed"
@@ -20,6 +21,10 @@ class DummyOpenAIService:
 
     def generate_illustrations(self, prompt):
         return []
+
+    def apply_corrections(self, text, corrections):
+        self.corrected = (text, corrections)
+        return "post modifié"
 
 
 class DummyTelegramService:
@@ -42,6 +47,15 @@ class DummyTelegramService:
 
     def ask_groups(self):
         return []
+
+
+class EditingDummyTelegramService(DummyTelegramService):
+    def __init__(self, logger, openai_service):
+        super().__init__(logger, openai_service)
+        self.messages = ["transcribed", "/modifier", "/publier", ""]
+
+    def ask_text(self, prompt):
+        return "modif"
 
 
 class DummyFacebookService:
@@ -109,4 +123,26 @@ def test_scheduling_flow(monkeypatch):
     assert fb_service.posted is None
     assert fb_service.scheduled[0] == "post"
     assert isinstance(fb_service.scheduled[1], datetime)
+
+
+def test_modification_flow(monkeypatch):
+    monkeypatch.setattr(
+        "audio_post_workflow.setup_logger", lambda name: DummyLogger()
+    )
+    openai_service = DummyOpenAIService(DummyLogger())
+    monkeypatch.setattr(
+        "audio_post_workflow.OpenAIService", lambda logger: openai_service
+    )
+    monkeypatch.setattr(
+        "audio_post_workflow.TelegramService", EditingDummyTelegramService
+    )
+    fb_service = DummyFacebookService(DummyLogger())
+    monkeypatch.setattr(
+        "audio_post_workflow.FacebookService", lambda logger: fb_service
+    )
+
+    workflow_main()
+
+    assert openai_service.corrected == ("post", "modif")
+    assert fb_service.posted == ("post modifié", None)
 
