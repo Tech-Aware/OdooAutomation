@@ -105,6 +105,31 @@ class TelegramService:
         return asyncio.run_coroutine_threadsafe(self._wait_voice(), self.loop).result()
 
     # ------------------------------------------------------------------
+    # Attente d'un message texte ou vocal
+    # ------------------------------------------------------------------
+    async def _wait_message(self) -> str:
+        """Attend la première entrée reçue, texte ou vocale."""
+        assert self.loop is not None
+        self._voice_future = self.loop.create_future()
+        self._text_future = self.loop.create_future()
+        done, pending = await asyncio.wait(
+            [self._voice_future, self._text_future],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+        result = next(iter(done)).result()
+        for fut in pending:
+            fut.cancel()
+        return result
+
+    @log_execution
+    def wait_for_message(self) -> str:
+        if not self.loop:
+            raise RuntimeError("Le bot Telegram n'est pas démarré")
+        return asyncio.run_coroutine_threadsafe(
+            self._wait_message(), self.loop
+        ).result()
+
+    # ------------------------------------------------------------------
     # Gestion des messages textes
     # ------------------------------------------------------------------
     async def _text_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

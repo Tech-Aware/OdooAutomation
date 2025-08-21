@@ -3,7 +3,7 @@ import os
 import re
 from io import BytesIO
 from pathlib import Path
-from typing import Dict, List
+from typing import List
 
 from openai import OpenAI, OpenAIError
 from config.log_config import log_execution
@@ -56,8 +56,8 @@ class OpenAIService:
         return "\n".join(new_lines).strip()
 
     @log_execution
-    def generate_event_post(self, text: str) -> Dict[str, object]:
-        """Génère les livrables A–E pour un texte d'événement donné."""
+    def generate_event_post(self, text: str) -> str:
+        """Génère un post unique pour un texte d'événement donné."""
         info = {"programme": text}
         user_prompt = build_user_prompt(info)
         messages = [
@@ -71,59 +71,12 @@ class OpenAIService:
                 temperature=0.7,
             )
             content = response.choices[0].message.content
+            return self._sanitize_text(content)
         except Exception as err:  # pragma: no cover - log then ignore
             self.logger.exception(
                 f"Erreur lors de la génération du post : {err}"
             )
-            return {
-                "standard": "",
-                "short": "",
-                "hooks": [],
-                "hashtags": [],
-                "thanks": "",
-            }
-
-        sections: Dict[str, object] = {
-            "standard": "",
-            "short": "",
-            "hooks": [],
-            "hashtags": [],
-            "thanks": "",
-        }
-
-        parts = [p.strip() for p in re.split(r"\n\s*\n", content) if p.strip()]
-
-        def _remove_heading(text: str, heading: str) -> str:
-            lines = text.splitlines()
-            if lines and lines[0].lower().startswith(heading):
-                return "\n".join(lines[1:]).strip()
-            return text
-
-        if parts:
-            sections["standard"] = self._sanitize_text(
-                _remove_heading(parts[0], "version standard")
-            )
-        if len(parts) > 1:
-            sections["short"] = self._sanitize_text(
-                _remove_heading(parts[1], "version courte")
-            )
-        if len(parts) > 2:
-            hooks_text = _remove_heading(parts[2], "accroches")
-            hooks_lines = [
-                line.lstrip("-• ").strip() for line in hooks_text.splitlines() if line.strip()
-            ]
-            sections["hooks"] = [self._sanitize_text(h) for h in hooks_lines]
-        if len(parts) > 3:
-            hashtags_text = _remove_heading(parts[3], "hashtags")
-            tokens: List[str] = []
-            for line in hashtags_text.splitlines():
-                tokens.extend(tag for tag in line.split() if tag.startswith("#"))
-            sections["hashtags"] = [self._sanitize_text(tag) for tag in tokens]
-        if len(parts) > 4:
-            sections["thanks"] = self._sanitize_text(
-                _remove_heading(parts[4], "remerciements")
-            )
-        return sections
+            return ""
 
     @log_execution
     def apply_corrections(self, text: str, corrections: str) -> str:
