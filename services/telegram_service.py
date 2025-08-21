@@ -268,3 +268,29 @@ class TelegramService:
         return asyncio.run_coroutine_threadsafe(
             self._ask_images(prompt, images), self.loop
         ).result()
+
+    async def _send_with_buttons(self, text: str, options: List[str]) -> str:
+        """Envoie ``text`` avec des boutons inline et retourne le choix."""
+        assert self.loop is not None
+        self._callback_future = self.loop.create_future()
+        mapping = {str(i): opt for i, opt in enumerate(options)}
+        keyboard = [
+            [InlineKeyboardButton(opt, callback_data=str(i))]
+            for i, opt in enumerate(options)
+        ]
+        await self.app.bot.send_message(
+            chat_id=self.allowed_user_id,
+            text=text,
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
+        answer_key = await self._callback_future
+        return mapping[answer_key]
+
+    @log_execution
+    def send_message_with_buttons(self, text: str, options: List[str]) -> str:
+        """Envoie un message et attend le choix d'un bouton parmi ``options``."""
+        if not self.loop:
+            raise RuntimeError("Le bot Telegram n'est pas démarré")
+        return asyncio.run_coroutine_threadsafe(
+            self._send_with_buttons(text, options), self.loop
+        ).result()
