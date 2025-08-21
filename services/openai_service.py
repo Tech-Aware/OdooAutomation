@@ -6,7 +6,6 @@ from typing import List
 
 from openai import OpenAI, OpenAIError
 from config.log_config import log_execution
-from generate_post.prompt_builder import build_user_prompt
 
 
 class OpenAIService:
@@ -29,9 +28,11 @@ class OpenAIService:
 
     @log_execution
     def generate_event_post(self, text: str) -> str:
-        """Génère un post unique pour un texte d'événement donné."""
-        info = {"programme": text}
-        user_prompt = build_user_prompt(info)
+        """Génère un post unique à partir d'un texte libre décrivant l'événement."""
+        user_prompt = (
+            "Rédige un post pour les réseaux sociaux à partir des informations "
+            f"suivantes : {text}"
+        )
         messages = [
             {"role": "system", "content": self.prompt_system},
             {"role": "user", "content": user_prompt},
