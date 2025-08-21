@@ -96,7 +96,7 @@ service.start()
 service.send_message("Bot prêt !")
 ```
 
-`TelegramService` propose aussi des méthodes interactives comme `ask_options`, `ask_yes_no`, `ask_groups`, `wait_for_voice_message` ou `ask_image`, exploitées par des scripts tels que `audio_post_workflow.py`.
+`TelegramService` propose aussi des méthodes interactives comme `ask_text` (qui accepte une réponse texte ou vocale), `ask_options`, `ask_yes_no`, `ask_groups`, `wait_for_voice_message` ou `ask_image`, exploitées par des scripts tels que `audio_post_workflow.py`.
 
 ## Exécution des tests
 
