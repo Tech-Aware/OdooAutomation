@@ -36,7 +36,7 @@ def main() -> None:
 
         try:
             last_post = openai_service.generate_event_post(text)
-            selected_image_path: str | None = None
+            selected_image_paths: list[str] = []
 
             while True:
                 action = telegram_service.send_message_with_buttons(
@@ -54,45 +54,63 @@ def main() -> None:
                     continue
 
                 if action == "Illustrer":
-                    styles = [
-                        "Réaliste",
-                        "Dessin animé",
-                        "Pixel art",
-                        "Manga",
-                        "Aquarelle",
-                        "Croquis",
-                        "Peinture à l'huile",
-                        "Low poly",
-                        "Cyberpunk",
-                        "Art déco",
-                        "Noir et blanc",
-                        "Fantaisie",
-                    ]
-                    style = telegram_service.ask_options(
-                        "Choisissez un style d'illustration", styles
+                    choice = telegram_service.send_message_with_buttons(
+                        "Comment souhaitez-vous illustrer ?",
+                        ["Générer", "Joindre", "Retour"],
                     )
-                    illustrations = openai_service.generate_illustrations(
-                        last_post, style
-                    )
-                    if illustrations:
-                        chosen_image = telegram_service.ask_image(
-                            "Choisissez une illustration", illustrations
+                    if choice == "Générer":
+                        styles = [
+                            "Réaliste",
+                            "Dessin animé",
+                            "Pixel art",
+                            "Manga",
+                            "Aquarelle",
+                            "Croquis",
+                            "Peinture à l'huile",
+                            "Low poly",
+                            "Cyberpunk",
+                            "Art déco",
+                            "Noir et blanc",
+                            "Fantaisie",
+                        ]
+                        style = telegram_service.ask_options(
+                            "Choisissez un style d'illustration", styles
                         )
-                        if chosen_image:
-                            chosen_image.seek(0)
-                            selected_image_path = "selected_image.png"
-                            with open(selected_image_path, "wb") as fh:
-                                fh.write(chosen_image.getvalue())
-                    continue
+                        illustrations = openai_service.generate_illustrations(
+                            last_post, style
+                        )
+                        if illustrations:
+                            chosen_image = telegram_service.ask_image(
+                                "Choisissez une illustration", illustrations
+                            )
+                            if chosen_image:
+                                chosen_image.seek(0)
+                                path = f"generated_image_{len(selected_image_paths)}.png"
+                                with open(path, "wb") as fh:
+                                    fh.write(chosen_image.getvalue())
+                                selected_image_paths = [path]
+                        continue
+                    if choice == "Joindre":
+                        images = telegram_service.ask_user_images()
+                        start = len(selected_image_paths)
+                        for idx, img in enumerate(images):
+                            img.seek(0)
+                            path = f"user_image_{start + idx}.png"
+                            with open(path, "wb") as fh:
+                                fh.write(img.getvalue())
+                            selected_image_paths.append(path)
+                        continue
+                    if choice == "Retour":
+                        continue
 
                 if action == "Publier":
                     facebook_service.post_to_facebook_page(
-                        last_post, selected_image_path
+                        last_post, selected_image_paths or None
                     )
                     groups = telegram_service.ask_groups()
                     if groups:
                         facebook_service.cross_post_to_groups(
-                            last_post, groups, selected_image_path
+                            last_post, groups, selected_image_paths or None
                         )
                     telegram_service.send_message("Publication effectuée.")
                     logger.info("Post généré avec succès.")
@@ -106,7 +124,7 @@ def main() -> None:
                             hour=8, minute=0, second=0, microsecond=0
                         )
                     facebook_service.schedule_post_to_facebook_page(
-                        last_post, target, selected_image_path
+                        last_post, target, selected_image_paths or None
                     )
                     telegram_service.send_message("Publication planifiée.")
                     logger.info("Publication programmée avec succès.")

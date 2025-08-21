@@ -39,11 +39,18 @@ class TelegramService:
                 self._text_handler,
             )
         )
+        self.app.add_handler(
+            MessageHandler(
+                filters.PHOTO & filters.User(self.allowed_user_id),
+                self._photo_handler,
+            )
+        )
         self.app.add_handler(CallbackQueryHandler(self._callback_handler))
         self.loop: asyncio.AbstractEventLoop | None = None
         self._voice_future: asyncio.Future[str] | None = None
         self._text_future: asyncio.Future[str] | None = None
         self._callback_future: asyncio.Future[str] | None = None
+        self._photo_future: asyncio.Future[BytesIO] | None = None
         self._thread: threading.Thread | None = None
 
     # ------------------------------------------------------------------
@@ -107,6 +114,39 @@ class TelegramService:
         if not self.loop:
             raise RuntimeError("Le bot Telegram n'est pas démarré")
         return asyncio.run_coroutine_threadsafe(self._wait_voice(), self.loop).result()
+
+    # ------------------------------------------------------------------
+    # Gestion des photos
+    # ------------------------------------------------------------------
+    async def _photo_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        if not (update.message and update.message.photo):
+            return
+        if self._photo_future is None or self._photo_future.done():
+            return
+        file = await context.bot.get_file(update.message.photo[-1].file_id)
+        data = await file.download_as_bytearray()
+        self._photo_future.set_result(BytesIO(data))
+
+    async def _wait_photo(self) -> BytesIO:
+        assert self.loop is not None
+        self._photo_future = self.loop.create_future()
+        return await self._photo_future
+
+    @log_execution
+    def ask_photo(self, prompt: str) -> BytesIO:
+        if not self.loop:
+            raise RuntimeError("Le bot Telegram n'est pas démarré")
+        self.send_message(prompt)
+        return asyncio.run_coroutine_threadsafe(self._wait_photo(), self.loop).result()
+
+    @log_execution
+    def ask_user_images(self) -> List[BytesIO]:
+        images: List[BytesIO] = []
+        while True:
+            images.append(self.ask_photo("Envoyez une image"))
+            if not self.ask_yes_no("Ajouter une autre image ?"):
+                break
+        return images
 
     # ------------------------------------------------------------------
     # Attente d'un message texte ou vocal
