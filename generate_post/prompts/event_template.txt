@@ -1,5 +1,4 @@
-Génère les livrables A–E selon les règles système ci-dessus.
-Infos connues (copie-colle brut ci-dessous ; n’ajoute rien qui n’y figure pas) :
+Rédige un post pour les réseaux sociaux à partir des informations ci-dessous. N'invente rien si une donnée manque.
 
 - Objet/nom : {objet}
 - Date : {date}
