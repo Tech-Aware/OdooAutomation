@@ -26,7 +26,8 @@ class DummyTelegramService:
     def __init__(self, logger, openai_service):
         self.logger = logger
         self.openai_service = openai_service
-        self._voice_step = 0
+        self.messages = ["transcribed", "/publier", ""]
+        self.index = 0
 
     def start(self):
         pass
@@ -35,20 +36,9 @@ class DummyTelegramService:
         pass
 
     def wait_for_message(self):
-        if self._voice_step == 0:
-            self._voice_step += 1
-            return "transcribed"
-        return ""
-
-    def ask_yes_no(self, prompt):
-        mapping = {
-            "Générer des illustrations ?": False,
-            "Souhaitez-vous programmer la publication ?": False,
-        }
-        return mapping.get(prompt, False)
-
-    def ask_image(self, prompt, illustrations):
-        return None
+        msg = self.messages[self.index]
+        self.index += 1
+        return msg
 
     def ask_groups(self):
         return []
@@ -91,12 +81,9 @@ def test_main_flow(monkeypatch):
 
 
 class SchedulingDummyTelegramService(DummyTelegramService):
-    def ask_yes_no(self, prompt):
-        mapping = {
-            "Générer des illustrations ?": False,
-            "Souhaitez-vous programmer la publication ?": True,
-        }
-        return mapping.get(prompt, False)
+    def __init__(self, logger, openai_service):
+        super().__init__(logger, openai_service)
+        self.messages = ["transcribed", "/programmer", ""]
 
 
 def test_scheduling_flow(monkeypatch):
