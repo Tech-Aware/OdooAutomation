@@ -60,7 +60,9 @@ class TelegramService:
             self.loop = asyncio.get_event_loop()
             self.loop.run_until_complete(self.app.initialize())
             self.loop.run_until_complete(self.app.start())
-            self.loop.run_until_complete(self.app.updater.start_polling())
+            self.loop.run_until_complete(
+                self.app.updater.start_polling(drop_pending_updates=True)
+            )
             self.loop.run_forever()
 
         self._thread = threading.Thread(target=_run, daemon=True)
