@@ -29,17 +29,20 @@ def main() -> None:
 
     telegram_service.send_message("Il est temps de publier Kevin")
 
+    last_post: str | None = None
+    selected_image_path: str | None = None
+
     while True:
         text = telegram_service.wait_for_message()
         if not text:
             break
 
         try:
-            choice = openai_service.generate_event_post(text)
-
-            selected_image_path: str | None = None
-            if telegram_service.ask_yes_no("Générer des illustrations ?"):
-                illustrations = openai_service.generate_illustrations(choice)
+            if text.startswith("/illustrer"):
+                if not last_post:
+                    telegram_service.send_message("Aucun post à illustrer.")
+                    continue
+                illustrations = openai_service.generate_illustrations(last_post)
                 if illustrations:
                     chosen_image = telegram_service.ask_image(
                         "Choisissez une illustration", illustrations
@@ -49,12 +52,29 @@ def main() -> None:
                         selected_image_path = "selected_image.png"
                         with open(selected_image_path, "wb") as fh:
                             fh.write(chosen_image.getvalue())
+                continue
 
-            telegram_service.send_message(choice)
+            if text.startswith("/publier"):
+                if not last_post:
+                    telegram_service.send_message("Aucun post à publier.")
+                    continue
+                facebook_service.post_to_facebook_page(
+                    last_post, selected_image_path
+                )
+                groups = telegram_service.ask_groups()
+                if groups:
+                    facebook_service.cross_post_to_groups(
+                        last_post, groups, selected_image_path
+                    )
+                telegram_service.send_message("Publication effectuée.")
+                last_post = None
+                selected_image_path = None
+                continue
 
-            if telegram_service.ask_yes_no(
-                "Souhaitez-vous programmer la publication ?"
-            ):
+            if text.startswith("/programmer"):
+                if not last_post:
+                    telegram_service.send_message("Aucun post à programmer.")
+                    continue
                 now = datetime.utcnow()
                 target = now.replace(hour=20, minute=0, second=0, microsecond=0)
                 if now >= target:
@@ -62,20 +82,18 @@ def main() -> None:
                         hour=8, minute=0, second=0, microsecond=0
                     )
                 facebook_service.schedule_post_to_facebook_page(
-                    choice, target, selected_image_path
+                    last_post, target, selected_image_path
                 )
                 telegram_service.send_message("Publication planifiée.")
+                last_post = None
+                selected_image_path = None
                 logger.info("Publication programmée avec succès.")
                 continue
 
-            facebook_service.post_to_facebook_page(choice, selected_image_path)
-            groups = telegram_service.ask_groups()
-            if groups:
-                facebook_service.cross_post_to_groups(
-                    choice, groups, selected_image_path
-                )
-
-            logger.info("Publication terminée avec succès.")
+            # Par défaut, le message est transmis à OpenAI pour générer un post
+            last_post = openai_service.generate_event_post(text)
+            telegram_service.send_message(last_post)
+            logger.info("Post généré avec succès.")
         except Exception as err:  # pragma: no cover - log then continue
             logger.exception(f"Erreur lors du traitement : {err}")
 

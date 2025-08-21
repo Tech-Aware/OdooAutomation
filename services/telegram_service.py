@@ -31,9 +31,11 @@ class TelegramService:
                 filters.VOICE & filters.User(self.allowed_user_id), self._voice_handler
             )
         )
+        # Les commandes (préfixées par /) sont traitées comme du texte afin de
+        # permettre la gestion personnalisée dans le workflow principal.
         self.app.add_handler(
             MessageHandler(
-                filters.TEXT & ~filters.COMMAND & filters.User(self.allowed_user_id),
+                filters.TEXT & filters.User(self.allowed_user_id),
                 self._text_handler,
             )
         )
