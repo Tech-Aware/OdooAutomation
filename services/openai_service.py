@@ -108,7 +108,7 @@ class OpenAIService:
         prompt = (
             f"Crée une illustration dans un style {style} représentant la "
             f"publication suivante : {post}. L'image doit contenir uniquement le "
-            f"texte \"Esplas-de-Sérou {date_str}\" et ne contenir aucun autre texte."
+            f"texte \"Esplas-de-Sérou et ne contenir aucun autre texte."
         )
 
         try:
