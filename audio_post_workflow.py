@@ -42,7 +42,26 @@ def main() -> None:
                 if not last_post:
                     telegram_service.send_message("Aucun post à illustrer.")
                     continue
-                illustrations = openai_service.generate_illustrations(last_post)
+                styles = [
+                    "Réaliste",
+                    "Dessin animé",
+                    "Pixel art",
+                    "Manga",
+                    "Aquarelle",
+                    "Croquis",
+                    "Peinture à l'huile",
+                    "Low poly",
+                    "Cyberpunk",
+                    "Art déco",
+                    "Noir et blanc",
+                    "Fantaisie",
+                ]
+                style = telegram_service.ask_options(
+                    "Choisissez un style d'illustration", styles
+                )
+                illustrations = openai_service.generate_illustrations(
+                    last_post, style
+                )
                 if illustrations:
                     chosen_image = telegram_service.ask_image(
                         "Choisissez une illustration", illustrations
