@@ -1,6 +1,5 @@
 import base64
 import os
-import re
 from io import BytesIO
 from pathlib import Path
 from typing import List
@@ -25,35 +24,8 @@ class OpenAIService:
         self.prompt_correction = (
             "Tu es correcteur·rice pour des posts de réseaux sociaux. "
             "Corrige le texte fourni selon les instructions et réponds "
-            "uniquement avec le texte final, sans astérisques, sans préambule "
-            "ni mention de version, et sans commentaire supplémentaire. "
-            "Fournis simplement le texte terminé suivi des hashtags sur une seule ligne."
+            "uniquement avec le texte final."
         )
-
-    @staticmethod
-    def _sanitize_text(text: str) -> str:
-        """Nettoie les éléments de mise en forme indésirables."""
-        cleaned = text.replace("*", "")
-        cleaned = re.sub(
-            r"(?i)voici le texte corrigé selon vos indications\s*:?", "", cleaned
-        )
-        cleaned = re.sub(r"(?i)version\s+(standard|courte)\s*:?", "", cleaned)
-        cleaned = re.sub(r"(?mi)^\s*[-–]{3,}\s*$", "", cleaned)
-        cleaned = re.sub(r"\b\d+\.\s*(#)", r"\1", cleaned)
-        cleaned = re.sub(r"(?mi)^\s*\d+\s*hashtags?\s+propos[ée]s?.*$", "", cleaned)
-        cleaned = re.sub(r"(?mi)^si vous avez besoin.*$", "", cleaned)
-        cleaned = re.sub(r"\n{2,}", "\n", cleaned)
-        lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
-        hashtags: List[str] = []
-        new_lines: List[str] = []
-        for line in lines:
-            if line.startswith("#"):
-                hashtags.extend(part for part in line.split() if part.startswith("#"))
-            else:
-                new_lines.append(line)
-        if hashtags:
-            new_lines.append(" ".join(dict.fromkeys(hashtags)))
-        return "\n".join(new_lines).strip()
 
     @log_execution
     def generate_event_post(self, text: str) -> str:
@@ -70,8 +42,7 @@ class OpenAIService:
                 messages=messages,
                 temperature=0.7,
             )
-            content = response.choices[0].message.content
-            return self._sanitize_text(content)
+            return response.choices[0].message.content
         except Exception as err:  # pragma: no cover - log then ignore
             self.logger.exception(
                 f"Erreur lors de la génération du post : {err}"
@@ -110,8 +81,7 @@ class OpenAIService:
                 model="gpt-4o-mini",
                 messages=messages,
             )
-            content = response.choices[0].message.content.strip()
-            return self._sanitize_text(content)
+            return response.choices[0].message.content.strip()
         except Exception as err:  # pragma: no cover - log then ignore
             self.logger.exception(
                 f"Erreur lors de l'application des corrections : {err}"
