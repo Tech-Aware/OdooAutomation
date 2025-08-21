@@ -1,4 +1,6 @@
 from datetime import datetime
+from io import BytesIO
+import audio_post_workflow
 from audio_post_workflow import main as workflow_main
 
 
@@ -19,7 +21,7 @@ class DummyOpenAIService:
         assert text == "transcribed"
         return "post"
 
-    def generate_illustrations(self, prompt):
+    def generate_illustrations(self, prompt, style):
         return []
 
     def apply_corrections(self, text, corrections):
@@ -72,6 +74,31 @@ class DummyFacebookService:
 
     def cross_post_to_groups(self, text, groups, image_path):
         pass
+
+
+class IllustrationDummyOpenAIService(DummyOpenAIService):
+    def __init__(self, logger):
+        super().__init__(logger)
+        self.called_with = None
+
+    def generate_illustrations(self, prompt, style):
+        self.called_with = (prompt, style)
+        return [BytesIO(b"img")]
+
+
+class IllustrationDummyTelegramService(DummyTelegramService):
+    def __init__(self, logger, openai_service):
+        super().__init__(logger, openai_service)
+        self.messages = ["transcribed", "/illustrer", "/publier", ""]
+
+    def ask_options(self, prompt, options):
+        assert "style" in prompt.lower()
+        assert "Manga" in options
+        assert len(options) > 3
+        return "Réaliste"
+
+    def ask_image(self, prompt, images):
+        return images[0]
 
 
 def test_main_flow(monkeypatch):
@@ -145,4 +172,36 @@ def test_modification_flow(monkeypatch):
 
     assert openai_service.corrected == ("post", "modif")
     assert fb_service.posted == ("post modifié", None)
+
+
+def test_illustration_flow(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        "audio_post_workflow.setup_logger", lambda name: DummyLogger()
+    )
+    openai_service = IllustrationDummyOpenAIService(DummyLogger())
+    monkeypatch.setattr(
+        "audio_post_workflow.OpenAIService", lambda logger: openai_service
+    )
+    monkeypatch.setattr(
+        "audio_post_workflow.TelegramService", IllustrationDummyTelegramService
+    )
+    fb_service = DummyFacebookService(DummyLogger())
+    monkeypatch.setattr(
+        "audio_post_workflow.FacebookService", lambda logger: fb_service
+    )
+    import builtins
+
+    real_open = builtins.open
+
+    def fake_open(path, mode="r", *args, **kwargs):
+        if path == "selected_image.png":
+            return real_open(tmp_path / path, mode, *args, **kwargs)
+        return real_open(path, mode, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "open", fake_open)
+
+    workflow_main()
+
+    assert openai_service.called_with == ("post", "Réaliste")
+    assert fb_service.posted == ("post", "selected_image.png")
 

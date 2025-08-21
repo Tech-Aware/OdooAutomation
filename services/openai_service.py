@@ -92,9 +92,9 @@ class OpenAIService:
 
     @log_execution
     def generate_illustrations(
-        self, post: str, event_date: str | None = None
+        self, post: str, style: str, event_date: str | None = None
     ) -> List[BytesIO]:
-        """Génère une liste d'illustrations en mémoire.
+        """Génère une liste d'illustrations en mémoire dans un style donné.
 
         L'illustration doit mettre en scène la publication tout en affichant
         uniquement le texte ``Esplas-de-Sérou <date>`` où ``<date>`` est la date
@@ -106,9 +106,9 @@ class OpenAIService:
 
         date_str = event_date or datetime.utcnow().strftime("%d/%m/%Y")
         prompt = (
-            "Crée une illustration représentant la publication suivante : "
-            f"{post}. L'image doit contenir uniquement le texte \"Esplas-de-Sérou "
-            f"{date_str}\" et ne contenir aucun autre texte."
+            f"Crée une illustration dans un style {style} représentant la "
+            f"publication suivante : {post}. L'image doit contenir uniquement le "
+            f"texte \"Esplas-de-Sérou {date_str}\" et ne contenir aucun autre texte."
         )
 
         try:

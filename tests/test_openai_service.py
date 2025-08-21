@@ -84,11 +84,14 @@ def test_generate_illustrations_returns_bytesio(mock_openai):
     )()
 
     service = OpenAIService(MagicMock())
-    images = service.generate_illustrations("prompt", event_date="01/02/2025")
+    images = service.generate_illustrations(
+        "prompt", "Cubisme", event_date="01/02/2025"
+    )
     assert len(images) == 2
     assert all(isinstance(img, BytesIO) for img in images)
     _, kwargs = mock_client.images.generate.call_args
     assert "Esplas-de-Sérou 01/02/2025" in kwargs["prompt"]
+    assert "Cubisme" in kwargs["prompt"]
 
 
 @patch("services.openai_service.OpenAI")
@@ -98,7 +101,7 @@ def test_generate_illustrations_invalid_request(mock_openai):
     mock_client.images.generate.side_effect = openai.OpenAIError("bad request")
 
     service = OpenAIService(MagicMock())
-    result = service.generate_illustrations("prompt")
+    result = service.generate_illustrations("prompt", "Cubisme")
 
     assert result == []
 
