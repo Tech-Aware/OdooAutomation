@@ -50,6 +50,23 @@ class DummyTelegramService:
     def ask_groups(self):
         return []
 
+    def send_message_with_buttons(self, text, options):
+        msg = self.wait_for_message()
+        cmd = msg.lstrip("/").lower()
+        for opt in options:
+            if opt.lower().startswith(cmd):
+                return opt
+        return options[0]
+
+    def ask_options(self, prompt, options):
+        return self.send_message_with_buttons(prompt, options)
+
+    def ask_yes_no(self, prompt):
+        return False
+
+    def ask_user_images(self):
+        return []
+
 
 class EditingDummyTelegramService(DummyTelegramService):
     def __init__(self, logger, openai_service):
@@ -89,7 +106,7 @@ class IllustrationDummyOpenAIService(DummyOpenAIService):
 class IllustrationDummyTelegramService(DummyTelegramService):
     def __init__(self, logger, openai_service):
         super().__init__(logger, openai_service)
-        self.messages = ["transcribed", "/illustrer", "/publier", ""]
+        self.messages = ["transcribed", "/illustrer", "/generer", "/publier", ""]
 
     def ask_options(self, prompt, options):
         assert "style" in prompt.lower()
@@ -194,7 +211,7 @@ def test_illustration_flow(monkeypatch, tmp_path):
     real_open = builtins.open
 
     def fake_open(path, mode="r", *args, **kwargs):
-        if path == "selected_image.png":
+        if path.startswith("generated_image_0"):
             return real_open(tmp_path / path, mode, *args, **kwargs)
         return real_open(path, mode, *args, **kwargs)
 
@@ -203,5 +220,53 @@ def test_illustration_flow(monkeypatch, tmp_path):
     workflow_main()
 
     assert openai_service.called_with == ("post", "Réaliste")
-    assert fb_service.posted == ("post", "selected_image.png")
+    assert fb_service.posted == ("post", ["generated_image_0.png"])
+
+
+class AttachDummyTelegramService(DummyTelegramService):
+    def __init__(self, logger, openai_service):
+        super().__init__(logger, openai_service)
+        self.messages = [
+            "transcribed",
+            "/illustrer",
+            "/joindre",
+            "/publier",
+            "",
+        ]
+
+    def ask_user_images(self):
+        return [BytesIO(b"a"), BytesIO(b"b")]
+
+
+def test_attach_images_flow(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        "audio_post_workflow.setup_logger", lambda name: DummyLogger()
+    )
+    monkeypatch.setattr(
+        "audio_post_workflow.OpenAIService", DummyOpenAIService
+    )
+    monkeypatch.setattr(
+        "audio_post_workflow.TelegramService", AttachDummyTelegramService
+    )
+    fb_service = DummyFacebookService(DummyLogger())
+    monkeypatch.setattr(
+        "audio_post_workflow.FacebookService", lambda logger: fb_service
+    )
+    import builtins
+
+    real_open = builtins.open
+
+    def fake_open(path, mode="r", *args, **kwargs):
+        if path.startswith("user_image_"):
+            return real_open(tmp_path / path, mode, *args, **kwargs)
+        return real_open(path, mode, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "open", fake_open)
+
+    workflow_main()
+
+    assert fb_service.posted == (
+        "post",
+        ["user_image_0.png", "user_image_1.png"],
+    )
 

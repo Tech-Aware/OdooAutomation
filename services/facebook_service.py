@@ -20,8 +20,14 @@ class FacebookService:
         self.page_id = config.FACEBOOK_PAGE_ID
         self.page_token = config.PAGE_ACCESS_TOKEN
 
-    def _prepare_files(self, image: Union[str, BytesIO] | None):
-        """Prépare les données de fichier pour l'API Facebook."""
+    def _prepare_files(
+        self, image: Union[str, BytesIO, List[Union[str, BytesIO]], None]
+    ):
+        """Prépare les données de fichier pour l'API Facebook.
+
+        Si ``image`` est une liste, seule la première est utilisée."""
+        if isinstance(image, list):
+            image = image[0] if image else None
         if isinstance(image, BytesIO):
             image.seek(0)
             return {"source": image}, None
@@ -32,7 +38,9 @@ class FacebookService:
 
     @log_execution
     def post_to_facebook_page(
-        self, message: str, image: Union[str, BytesIO, None] = None
+        self,
+        message: str,
+        image: Union[str, BytesIO, List[Union[str, BytesIO]], None] = None,
     ) -> dict | None:
         """Planifie un post sur la page Facebook principale."""
         files, fh = self._prepare_files(image)
@@ -75,7 +83,7 @@ class FacebookService:
         self,
         message: str,
         publish_time: datetime,
-        image: Union[str, BytesIO, None] = None,
+        image: Union[str, BytesIO, List[Union[str, BytesIO]], None] = None,
     ) -> dict | None:
         """Planifie la publication d'un post sur la page principale."""
         files, fh = self._prepare_files(image)
@@ -126,7 +134,10 @@ class FacebookService:
 
     @log_execution
     def cross_post_to_groups(
-        self, message: str, groups: List[str], image: Union[str, BytesIO, None] = None
+        self,
+        message: str,
+        groups: List[str],
+        image: Union[str, BytesIO, List[Union[str, BytesIO]], None] = None,
     ) -> List[str]:
         """Diffuse le message dans les groupes donnés et retourne les IDs de réponse."""
         response_ids: List[str] = []
