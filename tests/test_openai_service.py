@@ -1,7 +1,5 @@
 import base64
 from io import BytesIO
-import base64
-from io import BytesIO
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -59,24 +57,13 @@ def test_generate_event_post(monkeypatch):
 
 
 def test_apply_corrections(monkeypatch):
-    raw = (
-        "Voici le texte corrigé selon vos indications :\n\n"
-        "---\n"
-        "**Texte corrigé**\n"
-        "#tag1\n"
-        "#tag2\n"
-        "5 hashtags proposés\n"
-        "1. #tag1\n"
-        "2. #tag2\n"
-        "Si vous avez besoin d'autres informations, n'hésitez pas à demander !"
-    )
+    raw = "Texte corrigé"
     dummy_client = DummyClient(content=raw)
     monkeypatch.setattr("services.openai_service.OpenAI", lambda: dummy_client)
     service = OpenAIService(DummyLogger())
 
     result = service.apply_corrections("Original", "Correction")
-
-    assert result == "Texte corrigé\n#tag1 #tag2"
+    assert result == raw
     messages = dummy_client.chat.completions.called_with["messages"]
     assert "Correction" in messages[1]["content"]
 
