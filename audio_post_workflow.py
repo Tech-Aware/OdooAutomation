@@ -1,7 +1,7 @@
-"""Workflow de publication basé sur un message vocal reçu via Telegram.
+"""Workflow de publication basé sur un message reçu via Telegram.
 
-Le script invite l'utilisateur à envoyer un message vocal et construit un post
-à partir de la transcription obtenue. Les interactions utilisateurs sont
+Le script invite l'utilisateur à envoyer un message vocal ou texte et construit
+un post à partir du contenu obtenu. Les interactions utilisateurs sont
 désormais réalisées via un véritable bot Telegram.
 
 """
@@ -30,38 +30,12 @@ def main() -> None:
     telegram_service.send_message("Il est temps de publier Kevin")
 
     while True:
-        text = telegram_service.wait_for_voice_message()
+        text = telegram_service.wait_for_message()
         if not text:
             break
 
         try:
-            package = openai_service.generate_event_post(text)
-            versions = [package.get("standard", ""), package.get("short", "")]
-            version_choice = telegram_service.ask_options(
-                "Choisissez la version", versions
-            )
-            hooks = package.get("hooks", [])
-            hook_choice = ""
-            if hooks:
-                hook_choice = telegram_service.ask_options(
-                    "Choisissez l'accroche", hooks
-                )
-            hashtags = package.get("hashtags", [])
-            hashtag_choices = []
-            if hashtags:
-                hashtag_choices = telegram_service.ask_list(
-                    "Choisissez un hashtag", hashtags
-                )
-            choice = hook_choice
-            if choice:
-                choice += "\n\n"
-            choice += version_choice
-            if hashtag_choices:
-                choice += "\n\n" + " ".join(hashtag_choices)
-
-            if telegram_service.ask_yes_no("Ajouter un lien ?"):
-                link = telegram_service.ask_text("Quel lien ajouter ?")
-                choice = f"{choice}\n{link}"
+            choice = openai_service.generate_event_post(text)
 
             selected_image_path: str | None = None
             if telegram_service.ask_yes_no("Générer des illustrations ?"):
@@ -78,12 +52,9 @@ def main() -> None:
 
             telegram_service.send_message(choice)
 
-            if telegram_service.ask_yes_no("Faut-il corriger ce post ?"):
-                corrections = telegram_service.ask_text("Envoyez les corrections :")
-                choice = openai_service.apply_corrections(choice, corrections)
-                telegram_service.send_message(choice)
-
-            if telegram_service.ask_yes_no("Souhaitez-vous programmer la publication ?"):
+            if telegram_service.ask_yes_no(
+                "Souhaitez-vous programmer la publication ?"
+            ):
                 now = datetime.utcnow()
                 target = now.replace(hour=20, minute=0, second=0, microsecond=0)
                 if now >= target:

@@ -1,5 +1,7 @@
 import base64
 from io import BytesIO
+import base64
+from io import BytesIO
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -15,13 +17,7 @@ class DummyLogger:
 class DummyCompletions:
     def __init__(self, content=None):
         self.called_with = None
-        self.content = content or (
-            "Version standard:\nTexte standard\n\n"
-            "Version courte:\nTexte court\n\n"
-            "Accroches:\n- accroche1\n- accroche2\n- accroche3\n\n"
-            "Hashtags:\n#tag1 #tag2\n\n"
-            "Remerciements:\nmerci"
-        )
+        self.content = content or "Texte final"
 
     def create(self, **kwargs):
         self.called_with = kwargs
@@ -55,10 +51,7 @@ def test_generate_event_post(monkeypatch):
 
     result = service.generate_event_post("Mon programme")
 
-    assert result["standard"] == "Texte standard"
-    assert result["short"] == "Texte court"
-    assert result["hooks"] == ["accroche1", "accroche2", "accroche3"]
-    assert result["hashtags"] == ["#tag1", "#tag2"]
+    assert result == "Texte final"
     messages = dummy_client.chat.completions.called_with["messages"]
     expected_prompt = Path("prompt_system.txt").read_text(encoding="utf-8")
     assert messages[0] == {"role": "system", "content": expected_prompt}
