@@ -54,6 +54,19 @@ def main() -> None:
                             fh.write(chosen_image.getvalue())
                 continue
 
+            if text.startswith("/modifier"):
+                if not last_post:
+                    telegram_service.send_message("Aucun post à modifier.")
+                    continue
+                corrections = telegram_service.ask_text(
+                    "Partagez vos modifications s'il vous plaît !"
+                )
+                last_post = openai_service.apply_corrections(
+                    last_post, corrections
+                )
+                telegram_service.send_message(last_post)
+                continue
+
             if text.startswith("/publier"):
                 if not last_post:
                     telegram_service.send_message("Aucun post à publier.")
