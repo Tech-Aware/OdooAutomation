@@ -142,18 +142,14 @@ class TelegramService:
         if self._text_future is None or self._text_future.done():
             return
         self._text_future.set_result(update.message.text)
-
-    async def _wait_text(self) -> str:
-        assert self.loop is not None
-        self._text_future = self.loop.create_future()
-        return await self._text_future
-
+    
     @log_execution
     def ask_text(self, prompt: str) -> str:
+        """Envoie ``prompt`` et attend une réponse texte ou vocale."""
         if not self.loop:
             raise RuntimeError("Le bot Telegram n'est pas démarré")
         self.send_message(prompt)
-        return asyncio.run_coroutine_threadsafe(self._wait_text(), self.loop).result()
+        return asyncio.run_coroutine_threadsafe(self._wait_message(), self.loop).result()
     
     # ------------------------------------------------------------------
     # Questions avec boutons
