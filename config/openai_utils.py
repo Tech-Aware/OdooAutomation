@@ -11,10 +11,9 @@ from . import OPENAI_API_KEY
 logger = setup_logger(__name__)
 
 # Configure the OpenAI client using the key provided in config
+openai.api_key = OPENAI_API_KEY or "test"
 if not OPENAI_API_KEY:
     logger.error("Clé API OpenAI manquante dans le fichier .env")
-else:
-    openai.api_key = OPENAI_API_KEY
 
 # Obtenir le chemin du dossier parent
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -27,7 +26,7 @@ with open(file_path, 'r', encoding='utf-8') as f:
     prompt_system = f.read()
 
 
-def chat_gpt(prompt, model="gpt-4.1", system_prompt=prompt_system):
+def chat_gpt(prompt, model="gpt-4o", system_prompt=prompt_system):
     """
     Appelle l'API OpenAI ChatGPT avec gestion d’erreur et log.
     """
@@ -49,7 +48,7 @@ def chat_gpt(prompt, model="gpt-4.1", system_prompt=prompt_system):
         return None
 
 
-def generate_post_versions(text, model="gpt-4o-mini"):
+def generate_post_versions(text, model="gpt-4o"):
     """Génère trois versions alternatives d'un texte donné.
 
     Args:

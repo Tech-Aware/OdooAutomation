@@ -38,7 +38,7 @@ class OpenAIService:
         ]
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4o",
                 messages=messages,
                 temperature=0.7,
             )
@@ -78,7 +78,7 @@ class OpenAIService:
                 {"role": "user", "content": prompt},
             ]
             response = self.client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4o",
                 messages=messages,
             )
             return response.choices[0].message.content.strip()
