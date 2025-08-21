@@ -84,9 +84,11 @@ def test_generate_illustrations_returns_bytesio(mock_openai):
     )()
 
     service = OpenAIService(MagicMock())
-    images = service.generate_illustrations("prompt")
+    images = service.generate_illustrations("prompt", event_date="01/02/2025")
     assert len(images) == 2
     assert all(isinstance(img, BytesIO) for img in images)
+    _, kwargs = mock_client.images.generate.call_args
+    assert "Esplas-de-Sérou 01/02/2025" in kwargs["prompt"]
 
 
 @patch("services.openai_service.OpenAI")
