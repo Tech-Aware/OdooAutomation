@@ -52,6 +52,42 @@ class OpenAIService:
             return ""
 
     @log_execution
+    def generate_marketing_email(self, text: str) -> tuple[str, str]:
+        """Génère un email marketing avec objet et corps séparés.
+
+        L'objet est retourné sur la première ligne, suivi d'une ligne vide puis
+        du corps du message. Des marqueurs ``[LIEN]`` peuvent être utilisés pour
+        indiquer les emplacements où insérer des liens."""
+
+        user_prompt = (
+            "Rédige un email marketing à partir des informations suivantes : "
+            f"{text}. Fournis l'objet sur la première ligne, une ligne vide, "
+            "puis le corps de l'email. Utilise des marqueurs [LIEN] pour indiquer "
+            "où placer les liens."
+        )
+        messages = [
+            {"role": "system", "content": self.prompt_system},
+            {"role": "user", "content": user_prompt},
+        ]
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages,
+                temperature=0.7,
+            )
+            content = response.choices[0].message.content or ""
+            if "\n\n" in content:
+                subject, body = content.split("\n\n", 1)
+            else:
+                subject, body = content, ""
+            return subject.strip(), body.strip()
+        except Exception as err:  # pragma: no cover - log then ignore
+            self.logger.exception(
+                f"Erreur lors de la génération de l'email : {err}"
+            )
+            return "", ""
+
+    @log_execution
     def apply_corrections(self, text: str, corrections: str) -> str:
         """Applique une liste de corrections sur un texte.
 

@@ -68,6 +68,16 @@ def test_apply_corrections(monkeypatch):
     assert "Correction" in messages[1]["content"]
 
 
+def test_generate_marketing_email(monkeypatch):
+    dummy_client = DummyClient(content="Objet\n\nCorps")
+    monkeypatch.setattr("services.openai_service.OpenAI", lambda: dummy_client)
+    service = OpenAIService(DummyLogger())
+
+    subject, body = service.generate_marketing_email("Infos")
+    assert subject == "Objet"
+    assert body == "Corps"
+
+
 @patch("services.openai_service.OpenAI")
 def test_generate_illustrations_returns_bytesio(mock_openai):
     mock_client = MagicMock()
