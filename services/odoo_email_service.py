@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import List
+from zoneinfo import ZoneInfo
 
 from config.log_config import log_execution
 from config.odoo_connect import get_odoo_connection
@@ -28,7 +29,7 @@ class OdooEmailService:
         links: List[str]
             Liste d'URL à ajouter au contenu.
         send_datetime: datetime
-            Date et heure d'envoi (UTC).
+            Date et heure d'envoi (avec fuseau horaire).
 
         Returns
         -------
@@ -36,9 +37,11 @@ class OdooEmailService:
             L'identifiant de l'email créé.
         """
 
-        links_html = "<br>".join(
-            f'<a href="{url}">{url}</a>' for url in links
-        ) if links else ""
+        links_html = (
+            "<br>".join(f'<a href="{url}">{url}</a>' for url in links)
+            if links
+            else ""
+        )
         body_html = f"<p>{body}</p>"
         if links_html:
             body_html += f"<br>{links_html}"
@@ -54,7 +57,9 @@ class OdooEmailService:
                     "subject": subject,
                     "body_html": body_html,
                     "mailing_type": "mail",
-                    "schedule_date": send_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+                    "schedule_date": send_datetime.astimezone(
+                        ZoneInfo("UTC")
+                    ).strftime("%Y-%m-%d %H:%M:%S"),
                 }
             ],
         )
