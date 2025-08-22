@@ -1,12 +1,27 @@
-import logging
-import unittest
-from unittest.mock import Mock, mock_open, patch
+from unittest.mock import Mock, MagicMock, mock_open, patch
 import pytest
 import requests
+import logging
+import unittest
 from io import BytesIO
-from unittest.mock import MagicMock, patch
+import importlib
 
+
+def _server_proxy(url):
+    common = MagicMock()
+    common.authenticate.return_value = 1
+    models = MagicMock()
+    models.execute_kw.return_value = []
+    if url.endswith("/common"):
+        return common
+    return models
+
+
+_patcher = patch("xmlrpc.client.ServerProxy", side_effect=_server_proxy)
+_patcher.start()
 import config
+importlib.reload(config)
+_patcher.stop()
 from services.facebook_service import FacebookService
 
 

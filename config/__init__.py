@@ -8,9 +8,11 @@ and documented here for clarity.
 import os
 from dotenv import load_dotenv
 from .group_data_loader import load_group_data
+from config.log_config import setup_logger
 
 # Load variables from the .env file once
 load_dotenv()
+logger = setup_logger(__name__)
 
 # --- OpenAI configuration -----------------------------------------------------
 # Used by ``openai_utils`` and ``services.openai_service`` to authenticate calls
@@ -33,3 +35,11 @@ TELEGRAM_USER_ID = int(os.getenv("TELEGRAM_USER_ID", "0"))
 # Required by the Facebook posting utilities to publish on a page.
 FACEBOOK_PAGE_ID = os.getenv("FACEBOOK_PAGE_ID", "")
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN", "")
+
+# --- Test Odoo connection -----------------------------------------------------
+try:
+    from pos_category_management.manage_pos_categories import update_pos_categories
+
+    update_pos_categories()
+except Exception as exc:
+    logger.exception("Erreur lors du test de connexion à Odoo : %s", exc)
