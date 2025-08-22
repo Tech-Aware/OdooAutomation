@@ -9,6 +9,7 @@ from services.openai_service import OpenAIService
 from services.telegram_service import TelegramService
 from services.odoo_email_service import OdooEmailService
 from config.log_config import setup_logger, log_execution
+from config import ODOO_MAILING_LIST_IDS
 
 
 @log_execution
@@ -74,7 +75,9 @@ def main() -> None:
                     target = datetime.now(tz)
                     target_utc = target.astimezone(utc)
                     try:
-                        email_service.schedule_email(subject, body, links, target_utc)
+                        email_service.schedule_email(
+                            subject, body, links, target_utc, ODOO_MAILING_LIST_IDS
+                        )
                         telegram_service.send_message("Email envoyé.")
                     except xmlrpc.client.Fault as err:
                         logger.exception(
@@ -96,7 +99,7 @@ def main() -> None:
                     target_utc = target.astimezone(utc)
                     try:
                         email_service.schedule_email(
-                            subject, body, links, target_utc
+                            subject, body, links, target_utc, ODOO_MAILING_LIST_IDS
                         )
                         telegram_service.send_message("Email programmé.")
                     except xmlrpc.client.Fault as err:

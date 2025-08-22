@@ -25,6 +25,12 @@ ODOO_URL = os.getenv("ODOO_URL", "")
 ODOO_DB = os.getenv("ODOO_DB", "")
 ODOO_USER = os.getenv("ODOO_USER", "")
 ODOO_PASSWORD = os.getenv("ODOO_PASSWORD", "")
+# Comma-separated list IDs of mailing lists targeted by default.
+# Falls back to mailing list ID ``2`` when unspecified.
+_list_ids = os.getenv("ODOO_MAILING_LIST_IDS", "2")
+ODOO_MAILING_LIST_IDS = [
+    int(_id.strip()) for _id in _list_ids.split(",") if _id.strip()
+]
 
 # --- Telegram configuration ---------------------------------------------------
 # Used by ``telegram_service`` to send notifications to a specific user.
