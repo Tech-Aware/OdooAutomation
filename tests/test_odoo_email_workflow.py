@@ -27,7 +27,7 @@ class DummyTelegramService:
     def __init__(self, logger, openai_service):
         self.logger = logger
         self.openai_service = openai_service
-        self.messages = ["contenu", "/publier", "/terminer"]
+        self.messages = ["contenu", "/programmer", "/terminer"]
         self.index = 0
         self.buttons_calls = []
         self.sent_messages = []
