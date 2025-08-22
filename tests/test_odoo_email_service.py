@@ -48,6 +48,29 @@ def test_format_body_replaces_placeholder(monkeypatch):
     assert '<a href="http://ex"' in html
     assert "[LIEN]" not in html
 
+
+def test_replace_link_placeholder_after_platform(monkeypatch):
+    mock_models = MagicMock()
+
+    def fake_connect():
+        return ("db", 1, "pwd", mock_models)
+
+    monkeypatch.setattr(
+        "services.odoo_email_service.get_odoo_connection", fake_connect
+    )
+    monkeypatch.setattr(
+        "services.odoo_email_service.ODOO_EMAIL_FROM", "sender@example.com"
+    )
+
+    service = OdooEmailService(logging.getLogger("test"))
+    html, remaining = service._replace_link_placeholders(
+        "Consulter [LIEN] Facebook", ["http://fb"]
+    )
+
+    assert not remaining
+    assert "Facebook <a href=\"http://fb\"" in html
+    assert "[LIEN]" not in html
+
 def test_schedule_email_calls_odoo(monkeypatch):
     mock_models = MagicMock()
     mock_models.execute_kw.side_effect = [[99], 1, True]
