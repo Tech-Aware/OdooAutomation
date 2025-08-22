@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 from zoneinfo import ZoneInfo
+import xmlrpc.client
 
 from config.log_config import log_execution
 from config.odoo_connect import get_odoo_connection
@@ -105,13 +106,22 @@ class OdooEmailService:
             [create_vals],
         )
 
-        self.models.execute_kw(
-            self.db,
-            self.uid,
-            self.password,
-            "mailing.mailing",
-            "action_schedule",
-            [[mailing_id]],
-        )
+        try:
+            self.models.execute_kw(
+                self.db,
+                self.uid,
+                self.password,
+                "mailing.mailing",
+                "action_schedule",
+                [[mailing_id]],
+            )
+        except xmlrpc.client.Fault as err:
+            if "cannot marshal None" in err.faultString:
+                self.logger.warning(
+                    "Odoo a retourné une valeur None lors de la programmation; "
+                    "suppression de l'exception."
+                )
+            else:
+                raise
         return mailing_id
 
