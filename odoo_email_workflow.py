@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 import os
 import xmlrpc.client
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from services.openai_service import OpenAIService
 from services.telegram_service import TelegramService
@@ -18,7 +18,18 @@ def main() -> None:
     openai_service = OpenAIService(logger)
     telegram_service = TelegramService(logger, openai_service)
     telegram_service.start()
-    tz = ZoneInfo(os.getenv("EMAIL_TIMEZONE", "Europe/Paris"))
+
+    tz_name = os.getenv("EMAIL_TIMEZONE", "Europe/Paris")
+    try:
+        tz = ZoneInfo(tz_name)
+    except ZoneInfoNotFoundError:
+        logger.warning(
+            "Fuseau horaire '%s' introuvable, utilisation de UTC. "
+            "Installez le paquet 'tzdata' pour davantage de fuseaux horaires.",
+            tz_name,
+        )
+        tz = ZoneInfo("UTC")
+
     utc = ZoneInfo("UTC")
     try:
         email_service = OdooEmailService(logger)
