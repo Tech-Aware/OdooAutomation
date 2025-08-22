@@ -73,7 +73,8 @@ def main() -> None:
                     break
 
                 if action == "Terminer":
-                    break
+                    telegram_service.send_message("Fin du workflow email.")
+                    return
         except Exception as err:  # pragma: no cover - log then continue
             logger.exception(f"Erreur lors du traitement : {err}")
 
