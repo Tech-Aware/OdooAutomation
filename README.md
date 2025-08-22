@@ -50,9 +50,9 @@ Ces variables permettent de se connecter à Odoo, à l'API OpenAI, à Facebook e
   python generate_post/generate_facebook_post.py
   python generate_post/generate_linkedin_post.py
   ```
-- Mettre à jour automatiquement les catégories POS selon le jour :
+- Mettre à jour manuellement les catégories POS selon le jour :
   ```bash
-  python pos_category_management/manage_pos_categories.py
+  python pos_category_management/update_categories.py
   ```
   Ce script active BUVETTE, EPICERIE et BUREAU le vendredi à partir de 6h, puis BUVETTE, EPICERIE, BUREAU et FOURNIL le dimanche à partir de 6h. Les autres jours, ces catégories sont désactivées.
 
