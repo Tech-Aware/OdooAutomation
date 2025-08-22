@@ -8,6 +8,10 @@ Ce dépôt contient des scripts d'automatisation autour d'Odoo. On y génère de
 - **generate_post/** : scripts de génération de posts (Facebook, LinkedIn) basés sur ChatGPT. Les prompts sont stockés dans `prompts/`.
 - **pos_category_management/** : activation ou désactivation automatique des catégories du point de vente selon le jour (BUVETTE, EPICERIE, BUREAU le vendredi dès 6h ; BUVETTE, EPICERIE, BUREAU et FOURNIL le dimanche dès 6h).
 - **tests/** : quelques tests unitaires couvrant la configuration et l'intégration.
+- **services/** : couches d'abstraction pour OpenAI, Facebook, Odoo et Telegram.
+- **facebook_post/** : accès plus bas niveau à l'API Graph pour publier et partager des posts existants.
+- **audio_post_workflow.py** : workflow interactif via Telegram pour générer et publier un post Facebook à partir d'un message vocal ou texte.
+- **odoo_email_workflow.py** : workflow interactif créant un email marketing et le programmant dans Odoo.
 
 ## Dépendances
 
@@ -43,13 +47,31 @@ PAGE_ACCESS_TOKEN=<token de la page Facebook>
 
 Ces variables permettent de se connecter à Odoo, à l'API OpenAI, à Facebook et à Telegram pour l'envoi de notifications. `TELEGRAM_BOT_TOKEN` et `TELEGRAM_USER_ID` sont utilisés par `services/telegram_service.py` pour envoyer des messages, tandis que `FACEBOOK_PAGE_ID` et `PAGE_ACCESS_TOKEN` servent aux modules de publication Facebook.
 
+## Services principaux
+
+- **OpenAIService** (`services/openai_service.py`) : génération de posts ou d'emails, correction de texte, création d'illustrations et transcription audio via l'API OpenAI.
+- **FacebookService** (`services/facebook_service.py`) : publication, planification et partage de posts sur la page Facebook principale ou dans des groupes.
+- **OdooEmailService** (`services/odoo_email_service.py`) : construction d'emails marketing enrichis de liens utiles et planification dans Odoo.
+- **AudioService** (`services/audio_service.py`) : lecture de fichiers audio (simulés par des `.txt`) pour extraire du texte.
+- **TelegramService** (`services/telegram_service.py`) : bot interactif capable de recevoir texte, voix, images et de proposer des boutons de choix.
+
 ## Utilisation principale
 
-- Générer un post : exécuter un des scripts de `generate_post/`.
+- Générer un post statique : exécuter un des scripts de `generate_post/`.
   ```bash
   python generate_post/generate_facebook_post.py
   python generate_post/generate_linkedin_post.py
   ```
+- Lancer le workflow audio pour publier sur Facebook :
+  ```bash
+  python audio_post_workflow.py
+  ```
+  Le script récupère un message vocal ou texte via Telegram, génère un post avec OpenAI, propose d'ajouter des images puis publie ou planifie sur Facebook.
+- Lancer le workflow de création d'email marketing :
+  ```bash
+  python odoo_email_workflow.py
+  ```
+  Il compose un email marketing, permet d'insérer des liens utiles et programme l'envoi dans Odoo.
 - Mettre à jour manuellement les catégories POS selon le jour :
   ```bash
   python pos_category_management/update_categories.py
@@ -79,6 +101,13 @@ Ces variables permettent de se connecter à Odoo, à l'API OpenAI, à Facebook e
   add_ids = [CATEGORY_IDS[name] for name in add]
   # add_ids == [79, 72, 53, 58]
   ```
+
+## Workflows interactifs via Telegram
+
+Les workflows `audio_post_workflow.py` et `odoo_email_workflow.py` guident l'utilisateur pas à pas grâce au bot Telegram :
+
+- **audio_post_workflow.py** : attend un message vocal ou texte, génère un post d'événement, propose des corrections, permet de joindre ou générer des images puis publie ou programme le contenu sur Facebook et dans des groupes.
+- **odoo_email_workflow.py** : compose un email marketing complet, suggère des liens utiles, autorise les corrections et planifie l'envoi dans Odoo à une date choisie.
 
 ## Service Telegram
 
