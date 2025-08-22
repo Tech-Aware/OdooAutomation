@@ -69,13 +69,14 @@ def test_apply_corrections(monkeypatch):
 
 
 def test_generate_marketing_email(monkeypatch):
-    dummy_client = DummyClient(content="Objet\n\nCorps")
+    html = "<html><body><p>Corps</p></body></html>"
+    dummy_client = DummyClient(content=f"Objet\n\n{html}")
     monkeypatch.setattr("services.openai_service.OpenAI", lambda: dummy_client)
     service = OpenAIService(DummyLogger())
 
     subject, body = service.generate_marketing_email("Infos")
     assert subject == "Objet"
-    assert body == "Corps"
+    assert body == html
 
 
 @patch("services.openai_service.OpenAI")

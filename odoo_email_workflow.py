@@ -47,10 +47,10 @@ def main() -> None:
             break
 
         try:
-            subject, body = openai_service.generate_marketing_email(text)
+            subject, html_body = openai_service.generate_marketing_email(text)
             links: list[str] = []
             while True:
-                preview = f"Objet: {subject}\n\n{body}"
+                preview = f"Objet: {subject}\n\n{html_body}"
                 action = telegram_service.send_message_with_buttons(
                     preview,
                     ["Modifier", "Liens", "Publier", "Programmer", "Terminer"],
@@ -60,7 +60,7 @@ def main() -> None:
                     corrections = telegram_service.ask_text(
                         "Partagez vos modifications s'il vous plaît !"
                     )
-                    body = openai_service.apply_corrections(body, corrections)
+                    html_body = openai_service.apply_corrections(html_body, corrections)
                     continue
 
                 if action == "Liens":
@@ -76,7 +76,12 @@ def main() -> None:
                     target_utc = target.astimezone(utc)
                     try:
                         email_service.schedule_email(
-                            subject, body, links, target_utc, ODOO_MAILING_LIST_IDS
+                            subject,
+                            html_body,
+                            links,
+                            target_utc,
+                            ODOO_MAILING_LIST_IDS,
+                            already_html=True,
                         )
                         telegram_service.send_message("Email envoyé.")
                     except xmlrpc.client.Fault as err:
@@ -99,7 +104,12 @@ def main() -> None:
                     target_utc = target.astimezone(utc)
                     try:
                         email_service.schedule_email(
-                            subject, body, links, target_utc, ODOO_MAILING_LIST_IDS
+                            subject,
+                            html_body,
+                            links,
+                            target_utc,
+                            ODOO_MAILING_LIST_IDS,
+                            already_html=True,
                         )
                         telegram_service.send_message("Email programmé.")
                     except xmlrpc.client.Fault as err:
