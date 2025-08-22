@@ -68,21 +68,11 @@ class OdooEmailService:
         if links_html:
             body_html += f"<br>{links_html}"
 
-        link_ids: List[int] = []
-        for url in links:
-            link_id = self.models.execute_kw(
-                self.db,
-                self.uid,
-                self.password,
-                "link.tracker",
-                "create",
-                [{"url": url}],
-            )
-            link_ids.append(link_id)
-
         create_vals = {
+            "name": subject,
             "subject": subject,
             "body_html": body_html,
+            "body_plaintext": body,
             "mailing_type": "mail",
             "schedule_type": "scheduled",
             "email_from": self.email_from,
@@ -94,8 +84,6 @@ class OdooEmailService:
             create_vals["mailing_model_id"] = self.mailing_model_id
         if list_ids:
             create_vals["contact_list_ids"] = [(6, 0, list_ids)]
-        if link_ids:
-            create_vals["links_ids"] = [(6, 0, link_ids)]
 
         mailing_id = self.models.execute_kw(
             self.db,
