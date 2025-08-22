@@ -32,6 +32,10 @@ ODOO_MAILING_LIST_IDS = [
     int(_id.strip()) for _id in _list_ids.split(",") if _id.strip()
 ]
 
+# Default sender address for emails created via ``OdooEmailService``.
+# An empty value will trigger a runtime error when the service is initialised.
+ODOO_EMAIL_FROM = os.getenv("ODOO_EMAIL_FROM", "")
+
 # --- Telegram configuration ---------------------------------------------------
 # Used by ``telegram_service`` to send notifications to a specific user.
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
