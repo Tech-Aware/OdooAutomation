@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 from zoneinfo import ZoneInfo
 import xmlrpc.client
 
-from services.odoo_email_service import OdooEmailService
+from services.odoo_email_service import OdooEmailService, DEFAULT_LINKS
 
 
 def test_format_body_returns_fragment(monkeypatch):
@@ -90,7 +90,7 @@ def test_schedule_email_calls_odoo(monkeypatch):
     mailing_id = service.schedule_email("Sujet", "Corps", ["http://ex"], dt, [7])
 
     assert mailing_id == 1
-    expected_body = service._format_body("Corps", ["http://ex"])
+    expected_body = service._format_body("Corps", ["http://ex"] + DEFAULT_LINKS)
     mock_models.execute_kw.assert_any_call(
         "db",
         1,
@@ -141,7 +141,15 @@ def test_schedule_email_accepts_html(monkeypatch):
     dt = datetime(2024, 5, 29, 8, 0, tzinfo=ZoneInfo("Europe/Paris"))
     html = "<html><body><p>Corps</p></body></html>"
     service._format_body = MagicMock(side_effect=AssertionError("should not be called"))
-    expected_html = service._append_unsubscribe_link(html)
+    expected_html = (
+        "<html><body><p>Corps</p>"
+        + "".join(
+            f'<p><a href="{url}" style="color:#1a0dab;">{url}</a></p>'
+            for url in DEFAULT_LINKS
+        )
+        + '<p><a href="/unsubscribe_from_list" style="color:#1a0dab;">Se désabonner</a></p>'
+        "</body></html>"
+    )
 
     mailing_id = service.schedule_email("Sujet", html, [], dt, already_html=True)
 
@@ -196,7 +204,11 @@ def test_schedule_email_inserts_links_into_html(monkeypatch):
     expected_html = (
         "<html><body><p>Corps</p>"
         '<p><a href="http://ex" style="color:#1a0dab;">http://ex</a></p>'
-        '<p><a href="/unsubscribe_from_list" style="color:#1a0dab;">Se désabonner</a></p>'
+        + "".join(
+            f'<p><a href="{url}" style="color:#1a0dab;">{url}</a></p>'
+            for url in DEFAULT_LINKS
+        )
+        + '<p><a href="/unsubscribe_from_list" style="color:#1a0dab;">Se désabonner</a></p>'
         "</body></html>"
     )
     mock_models.execute_kw.assert_any_call(
@@ -242,7 +254,7 @@ def test_schedule_email_uses_default_list(monkeypatch):
     mailing_id = service.schedule_email("Sujet", "Corps", [], dt)
 
     assert mailing_id == 1
-    expected_body = service._format_body("Corps", [])
+    expected_body = service._format_body("Corps", DEFAULT_LINKS)
     mock_models.execute_kw.assert_any_call(
         "db",
         1,
@@ -301,7 +313,11 @@ def test_schedule_email_replaces_placeholder_in_html(monkeypatch):
     expected_html = (
         "<html><body><p>Consulter "
         '<a href="http://ex" style="color:#1a0dab;">http://ex</a></p>'
-        '<p><a href="/unsubscribe_from_list" style="color:#1a0dab;">Se désabonner</a></p>'
+        + "".join(
+            f'<p><a href="{url}" style="color:#1a0dab;">{url}</a></p>'
+            for url in DEFAULT_LINKS
+        )
+        + '<p><a href="/unsubscribe_from_list" style="color:#1a0dab;">Se désabonner</a></p>'
         "</body></html>"
     )
     mock_models.execute_kw.assert_any_call(

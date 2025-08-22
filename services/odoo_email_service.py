@@ -9,6 +9,12 @@ from config.odoo_connect import get_odoo_connection
 from config import ODOO_MAILING_LIST_IDS, ODOO_EMAIL_FROM
 
 
+DEFAULT_LINKS = [
+    "https://www.cdfesplas.com",
+    "https://www.facebook.com/cdfesplas",
+]
+
+
 class OdooEmailService:
     """Service pour créer et planifier des emails marketing via Odoo."""
 
@@ -165,6 +171,7 @@ class OdooEmailService:
 
         if list_ids is None:
             list_ids = ODOO_MAILING_LIST_IDS
+        links = list(links) + [l for l in DEFAULT_LINKS if l not in links]
 
         is_html = already_html or bool(re.search(r"<[^>]+>", body))
         if is_html:

@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from services.openai_service import OpenAIService
 from services.telegram_service import TelegramService
-from services.odoo_email_service import OdooEmailService
+from services.odoo_email_service import OdooEmailService, DEFAULT_LINKS
 from config.log_config import setup_logger, log_execution
 from config import ODOO_MAILING_LIST_IDS
 
@@ -48,7 +48,7 @@ def main() -> None:
 
         try:
             subject, html_body = openai_service.generate_marketing_email(text)
-            links: list[str] = []
+            links: list[str] = DEFAULT_LINKS.copy()
             while True:
                 preview_body, remaining_links = email_service._replace_link_placeholders(
                     html_body, links
@@ -75,7 +75,7 @@ def main() -> None:
                         "Fournissez les liens séparés par des espaces ou retours à la ligne"
                     )
                     new_links = [l.strip() for l in link_text.split() if l.strip()]
-                    links.extend(new_links)
+                    links = new_links + [l for l in links if l not in new_links]
                     continue
 
                 if action == "Publier":
