@@ -57,9 +57,7 @@ class OpenAIService:
         """Génère un email marketing et renvoie l'objet ainsi que le corps HTML.
 
         L'objet est retourné sur la première ligne, suivi d'une ligne vide puis
-        du corps complet de l'email au format HTML. Des marqueurs ``[LIEN]``
-        peuvent être utilisés pour indiquer les emplacements où insérer des
-        liens.
+        du corps complet de l'email au format HTML.
 
         Returns
         -------
@@ -71,7 +69,7 @@ class OpenAIService:
             "Rédige un email marketing à partir des informations suivantes : "
             f"{text}. Fournis l'objet sur la première ligne, une ligne vide, "
             "puis le corps complet de l'email en HTML avec les balises <html> et "
-            "<body>. Utilise des marqueurs [LIEN] pour indiquer où placer les liens."
+            "<body>."
         )
         messages = [
             {"role": "system", "content": self.prompt_system},

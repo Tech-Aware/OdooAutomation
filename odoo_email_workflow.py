@@ -2,6 +2,7 @@
 
 from datetime import datetime, timedelta
 import os
+import re
 import xmlrpc.client
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -48,16 +49,14 @@ def main() -> None:
 
         try:
             subject, html_body = openai_service.generate_marketing_email(text)
-            links: list[str] = DEFAULT_LINKS.copy()
+            links: list[tuple[str, str]] = DEFAULT_LINKS.copy()
             while True:
-                preview_body, remaining_links = email_service._replace_link_placeholders(
-                    html_body, links
-                )
-                preview = (
-                    f"{subject}\n\n{preview_body}" if subject else preview_body
-                )
-                if remaining_links:
-                    preview += "\n\n" + "\n".join(remaining_links)
+                links_preview = email_service.format_links_preview(links)
+                preview_body = html_body
+                if links_preview:
+                    preview_body += "\n\n" + links_preview
+                preview_body += "\n\nSe désabonner"
+                preview = f"{subject}\n\n{preview_body}" if subject else preview_body
                 action = telegram_service.send_message_with_buttons(
                     preview,
                     ["Modifier", "Liens", "Publier", "Programmer", "Terminer"],
@@ -72,10 +71,18 @@ def main() -> None:
 
                 if action == "Liens":
                     link_text = telegram_service.ask_text(
-                        "Fournissez les liens séparés par des espaces ou retours à la ligne"
+                        "Fournissez les liens au format 'Nom : URL' séparés par des virgules ou retours à la ligne"
                     )
-                    new_links = [l.strip() for l in link_text.split() if l.strip()]
-                    links = new_links + [l for l in links if l not in new_links]
+                    parts = re.split(r",|\n", link_text)
+                    new_links = []
+                    for part in parts:
+                        if ":" in part:
+                            name, url = part.split(":", 1)
+                            name, url = name.strip(), url.strip()
+                            if name and url:
+                                new_links.append((name, url))
+                    existing_urls = {u for _, u in new_links}
+                    links = new_links + [l for l in links if l[1] not in existing_urls]
                     continue
 
                 if action == "Publier":
