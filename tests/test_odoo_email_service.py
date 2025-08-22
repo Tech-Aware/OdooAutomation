@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 from unittest.mock import MagicMock
 from zoneinfo import ZoneInfo
+import xmlrpc.client
 
 from services.odoo_email_service import OdooEmailService
 
@@ -112,3 +113,27 @@ def test_schedule_email_uses_default_list(monkeypatch):
         "action_schedule",
         [[1]],
     )
+
+
+def test_schedule_email_handles_none_fault(monkeypatch):
+    mock_models = MagicMock()
+    fault = xmlrpc.client.Fault(
+        1, "TypeError: cannot marshal None unless allow_none is enabled"
+    )
+    mock_models.execute_kw.side_effect = [[99], 1, fault]
+
+    def fake_connect():
+        return ("db", 1, "pwd", mock_models)
+
+    monkeypatch.setattr(
+        "services.odoo_email_service.get_odoo_connection", fake_connect
+    )
+    monkeypatch.setattr(
+        "services.odoo_email_service.ODOO_EMAIL_FROM", "sender@example.com"
+    )
+
+    service = OdooEmailService(logging.getLogger("test"))
+    dt = datetime(2024, 5, 29, 8, 0, tzinfo=ZoneInfo("Europe/Paris"))
+    mailing_id = service.schedule_email("Sujet", "Corps", [], dt)
+
+    assert mailing_id == 1
