@@ -10,7 +10,9 @@ logger = setup_logger(__name__)
 def authenticate_odoo(url, db, username, password):
     """Authenticate against a real Odoo instance using XML-RPC."""
     logger.info("Tentative d'authentification Odoo...")
-    common = xmlrpc.client.ServerProxy(f"{url}/xmlrpc/2/common")
+    common = xmlrpc.client.ServerProxy(
+        f"{url}/xmlrpc/2/common", allow_none=True
+    )
     uid = common.authenticate(db, username, password, {})
     if not uid:
         logger.error("Échec de l'authentification Odoo : identifiants invalides.")

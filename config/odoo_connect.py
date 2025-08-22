@@ -31,7 +31,9 @@ def get_odoo_connection():
         uid = authenticate_odoo(url, db, username, password)
 
         # Proxy XML-RPC pour les objets Odoo
-        models = xmlrpc.client.ServerProxy(f"{url}/xmlrpc/2/object")
+        models = xmlrpc.client.ServerProxy(
+            f"{url}/xmlrpc/2/object", allow_none=True
+        )
         logger.info("Connexion à Odoo établie.")
 
         return db, uid, password, models

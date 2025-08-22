@@ -21,7 +21,7 @@ class TestOdooConnect(unittest.TestCase):
 
         models.execute_kw.side_effect = _execute_kw
 
-        def server_proxy(url):
+        def server_proxy(url, *args, **kwargs):
             if url.endswith("/common"):
                 return common
             if url.endswith("/object"):
