@@ -68,7 +68,7 @@ def test_replace_link_placeholder_after_platform(monkeypatch):
     )
 
     assert not remaining
-    assert "Facebook <a href=\"http://fb\"" in html
+    assert '<a href="http://fb" style="color:#1a0dab;">Facebook</a>' in html
     assert "[LIEN]" not in html
 
 def test_schedule_email_calls_odoo(monkeypatch):

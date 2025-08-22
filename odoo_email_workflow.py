@@ -98,6 +98,13 @@ def main() -> None:
                         telegram_service.send_message(
                             f"Erreur lors de l'envoi de l'email : {err}"
                         )
+                    final_action = telegram_service.send_message_with_buttons(
+                        "Que souhaitez-vous faire ?", ["Recommencer", "Terminer"]
+                    )
+                    if final_action == "Terminer":
+                        telegram_service.send_message("Fin du workflow email.")
+                        return
+                    telegram_service.send_message("Prêt pour l'email marketing !")
                     break
 
                 if action == "Programmer":
@@ -126,6 +133,13 @@ def main() -> None:
                         telegram_service.send_message(
                             f"Erreur lors de la programmation : {err}"
                         )
+                    final_action = telegram_service.send_message_with_buttons(
+                        "Que souhaitez-vous faire ?", ["Recommencer", "Terminer"]
+                    )
+                    if final_action == "Terminer":
+                        telegram_service.send_message("Fin du workflow email.")
+                        return
+                    telegram_service.send_message("Prêt pour l'email marketing !")
                     break
 
                 if action == "Terminer":
