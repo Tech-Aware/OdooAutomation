@@ -112,9 +112,15 @@ def main() -> None:
                         facebook_service.cross_post_to_groups(
                             last_post, groups, selected_image_paths or None
                         )
-                    telegram_service.send_message("Publication effectuée.")
                     logger.info("Post généré avec succès.")
-                    break
+                    final_action = telegram_service.send_message_with_buttons(
+                        "Publication effectuée.", ["Recommencer", "Terminer"]
+                    )
+                    if final_action == "Recommencer":
+                        break
+                    if final_action == "Terminer":
+                        telegram_service.send_message("Fin du processus.")
+                        return
 
                 if action == "Programmer":
                     now = datetime.utcnow()
@@ -126,9 +132,15 @@ def main() -> None:
                     facebook_service.schedule_post_to_facebook_page(
                         last_post, target, selected_image_paths or None
                     )
-                    telegram_service.send_message("Publication planifiée.")
                     logger.info("Publication programmée avec succès.")
-                    break
+                    final_action = telegram_service.send_message_with_buttons(
+                        "Publication planifiée.", ["Recommencer", "Terminer"]
+                    )
+                    if final_action == "Recommencer":
+                        break
+                    if final_action == "Terminer":
+                        telegram_service.send_message("Fin du processus.")
+                        return
 
                 if action == "Terminer":
                     telegram_service.send_message("Fin du processus.")

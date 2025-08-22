@@ -33,7 +33,7 @@ class DummyTelegramService:
     def __init__(self, logger, openai_service):
         self.logger = logger
         self.openai_service = openai_service
-        self.messages = ["transcribed", "/publier", ""]
+        self.messages = ["transcribed", "/publier", "/terminer"]
         self.index = 0
 
     def start(self):
@@ -71,7 +71,7 @@ class DummyTelegramService:
 class EditingDummyTelegramService(DummyTelegramService):
     def __init__(self, logger, openai_service):
         super().__init__(logger, openai_service)
-        self.messages = ["transcribed", "/modifier", "/publier", ""]
+        self.messages = ["transcribed", "/modifier", "/publier", "/terminer"]
 
     def ask_text(self, prompt):
         return "modif"
@@ -106,7 +106,13 @@ class IllustrationDummyOpenAIService(DummyOpenAIService):
 class IllustrationDummyTelegramService(DummyTelegramService):
     def __init__(self, logger, openai_service):
         super().__init__(logger, openai_service)
-        self.messages = ["transcribed", "/illustrer", "/generer", "/publier", ""]
+        self.messages = [
+            "transcribed",
+            "/illustrer",
+            "/generer",
+            "/publier",
+            "/terminer",
+        ]
 
     def ask_options(self, prompt, options):
         assert "style" in prompt.lower()
@@ -141,7 +147,7 @@ def test_main_flow(monkeypatch):
 class SchedulingDummyTelegramService(DummyTelegramService):
     def __init__(self, logger, openai_service):
         super().__init__(logger, openai_service)
-        self.messages = ["transcribed", "/programmer", ""]
+        self.messages = ["transcribed", "/programmer", "/terminer"]
 
 
 def test_scheduling_flow(monkeypatch):
@@ -231,7 +237,7 @@ class AttachDummyTelegramService(DummyTelegramService):
             "/illustrer",
             "/joindre",
             "/publier",
-            "",
+            "/terminer",
         ]
 
     def ask_user_images(self):
