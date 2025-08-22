@@ -34,10 +34,11 @@ class OdooEmailService:
     def _replace_link_placeholders(
         self, html: str, links: List[str]
     ) -> tuple[str, List[str]]:
-        """Remplace les balises [LIEN] par les URLs fournies.
+        """Remplace les balises ``[LIEN]`` par les URLs fournies.
 
-        Si la balise précède un mot (par exemple ``[LIEN] Facebook``),
-        l'URL est déplacée après ce mot.
+        Si la balise est immédiatement suivie d'un mot (ex. ``[LIEN] Facebook``),
+        ce mot devient l'ancre cliquable pointant vers l'URL correspondante,
+        sans afficher l'URL en clair.
 
         Parameters
         ----------
@@ -61,19 +62,14 @@ class OdooEmailService:
             match = re.match(r"\s*([^\s<.,!?;:]+)([.,!?;:]?)", after)
             if match:
                 word, punct = match.group(1), match.group(2)
-                anchor = (
-                    f"{word} <a href=\"{url}\" style=\"color:#1a0dab;\">{url}</a>{punct}"
-                )
-                html = (
-                    html[:idx]
-                    + anchor
-                    + after[len(match.group(0)) :]
-                )
+                full = match.group(0)
+                anchor_word = f'<a href="{url}" style="color:#1a0dab;">{word}</a>'
+                replacement = full.replace(word, anchor_word, 1)
+                html = html[:idx] + replacement + after[len(full):]
             else:
                 anchor = f'<a href="{url}" style="color:#1a0dab;">{url}</a>'
                 html = html.replace(placeholder, anchor, 1)
 
-        # Supprime les balises restantes si le nombre de liens est insuffisant
         html = html.replace(placeholder, "")
         return html, remaining
 
@@ -228,4 +224,3 @@ class OdooEmailService:
             else:
                 raise
         return mailing_id
-
