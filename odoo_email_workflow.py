@@ -1,6 +1,10 @@
 """Workflow de création d'email marketing via Telegram."""
 
 from datetime import datetime, timedelta
+import os
+import xmlrpc.client
+from zoneinfo import ZoneInfo
+
 from services.openai_service import OpenAIService
 from services.telegram_service import TelegramService
 from services.odoo_email_service import OdooEmailService
@@ -14,6 +18,8 @@ def main() -> None:
     openai_service = OpenAIService(logger)
     telegram_service = TelegramService(logger, openai_service)
     telegram_service.start()
+    tz = ZoneInfo(os.getenv("EMAIL_TIMEZONE", "Europe/Paris"))
+    utc = ZoneInfo("UTC")
     try:
         email_service = OdooEmailService(logger)
     except RuntimeError as err:
@@ -54,22 +60,41 @@ def main() -> None:
                     continue
 
                 if action == "Publier":
-                    email_service.schedule_email(
-                        subject, body, links, datetime.utcnow()
-                    )
-                    telegram_service.send_message("Email envoyé.")
+                    target = datetime.now(tz)
+                    target_utc = target.astimezone(utc)
+                    try:
+                        email_service.schedule_email(subject, body, links, target_utc)
+                        telegram_service.send_message("Email envoyé.")
+                    except xmlrpc.client.Fault as err:
+                        logger.exception(
+                            f"Erreur lors de l'envoi de l'email : {err}"
+                        )
+                        telegram_service.send_message(
+                            f"Erreur lors de l'envoi de l'email : {err}"
+                        )
                     break
 
                 if action == "Programmer":
-                    now = datetime.utcnow()
+                    now = datetime.now(tz)
                     days_ahead = (2 - now.weekday()) % 7  # 2 = mercredi
                     target = (now + timedelta(days=days_ahead)).replace(
                         hour=6, minute=0, second=0, microsecond=0
                     )
                     if target <= now:
                         target += timedelta(days=7)
-                    email_service.schedule_email(subject, body, links, target)
-                    telegram_service.send_message("Email programmé.")
+                    target_utc = target.astimezone(utc)
+                    try:
+                        email_service.schedule_email(
+                            subject, body, links, target_utc
+                        )
+                        telegram_service.send_message("Email programmé.")
+                    except xmlrpc.client.Fault as err:
+                        logger.exception(
+                            f"Erreur lors de la programmation : {err}"
+                        )
+                        telegram_service.send_message(
+                            f"Erreur lors de la programmation : {err}"
+                        )
                     break
 
                 if action == "Terminer":

@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 from unittest.mock import MagicMock
+from zoneinfo import ZoneInfo
 
 from services.odoo_email_service import OdooEmailService
 
@@ -17,7 +18,7 @@ def test_schedule_email_calls_odoo(monkeypatch):
     )
 
     service = OdooEmailService(logging.getLogger("test"))
-    dt = datetime(2024, 5, 29, 6, 0)
+    dt = datetime(2024, 5, 29, 8, 0, tzinfo=ZoneInfo("Europe/Paris"))
     mailing_id = service.schedule_email("Sujet", "Corps", ["http://ex"], dt)
 
     assert mailing_id == 1
