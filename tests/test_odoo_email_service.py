@@ -39,6 +39,7 @@ def test_schedule_email_calls_odoo(monkeypatch):
             {
                 "name": "Sujet",
                 "subject": "Sujet",
+                "body_arch": expected_body,
                 "body_html": expected_body,
                 "body_plaintext": "Corps",
                 "mailing_type": "mail",
@@ -89,6 +90,7 @@ def test_schedule_email_uses_default_list(monkeypatch):
             {
                 "name": "Sujet",
                 "subject": "Sujet",
+                "body_arch": "<p>Corps</p>",
                 "body_html": "<p>Corps</p>",
                 "body_plaintext": "Corps",
                 "mailing_type": "mail",

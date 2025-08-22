@@ -71,6 +71,7 @@ class OdooEmailService:
         create_vals = {
             "name": subject,
             "subject": subject,
+            "body_arch": body_html,
             "body_html": body_html,
             "body_plaintext": body,
             "mailing_type": "mail",
