@@ -80,6 +80,52 @@ def test_schedule_email_calls_odoo(monkeypatch):
     )
 
 
+def test_schedule_email_accepts_html(monkeypatch):
+    mock_models = MagicMock()
+    mock_models.execute_kw.side_effect = [[99], 1, True]
+
+    def fake_connect():
+        return ("db", 1, "pwd", mock_models)
+
+    monkeypatch.setattr(
+        "services.odoo_email_service.get_odoo_connection", fake_connect
+    )
+    monkeypatch.setattr(
+        "services.odoo_email_service.ODOO_EMAIL_FROM", "sender@example.com"
+    )
+
+    service = OdooEmailService(logging.getLogger("test"))
+    dt = datetime(2024, 5, 29, 8, 0, tzinfo=ZoneInfo("Europe/Paris"))
+    html = "<html><body><p>Corps</p></body></html>"
+    service._format_body = MagicMock(side_effect=AssertionError("should not be called"))
+
+    mailing_id = service.schedule_email("Sujet", html, [], dt, already_html=True)
+
+    assert mailing_id == 1
+    mock_models.execute_kw.assert_any_call(
+        "db",
+        1,
+        "pwd",
+        "mailing.mailing",
+        "create",
+        [
+            {
+                "name": "Sujet",
+                "subject": "Sujet",
+                "body_arch": html,
+                "body_html": html,
+                "body_plaintext": html,
+                "mailing_type": "mail",
+                "schedule_type": "scheduled",
+                "email_from": "sender@example.com",
+                "schedule_date": "2024-05-29 06:00:00",
+                "mailing_model_id": 99,
+                "contact_list_ids": [(6, 0, [2])],
+            }
+        ],
+    )
+
+
 def test_schedule_email_uses_default_list(monkeypatch):
     mock_models = MagicMock()
     mock_models.execute_kw.side_effect = [[99], 1, True]

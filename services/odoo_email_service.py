@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List, Optional
 from zoneinfo import ZoneInfo
 import xmlrpc.client
+import re
 
 from config.log_config import log_execution
 from config.odoo_connect import get_odoo_connection
@@ -66,6 +67,7 @@ class OdooEmailService:
         links: List[str],
         send_datetime: datetime,
         list_ids: Optional[List[int]] = None,
+        already_html: bool = False,
     ) -> int:
         """Crée et programme un email marketing.
 
@@ -74,11 +76,15 @@ class OdooEmailService:
         subject: str
             Objet de l'email.
         body: str
-            Contenu principal de l'email (HTML ou texte).
+            Contenu principal de l'email. Peut être du texte brut ou un HTML
+            complet.
         links: List[str]
             Liste d'URL à ajouter au contenu.
         send_datetime: datetime
             Date et heure d'envoi (avec fuseau horaire).
+        already_html: bool, optional
+            Indique si ``body`` est déjà un contenu HTML complet. Lorsque vrai,
+            le corps est utilisé tel quel sans passer par ``_format_body``.
 
         Returns
         -------
@@ -89,7 +95,15 @@ class OdooEmailService:
         if list_ids is None:
             list_ids = ODOO_MAILING_LIST_IDS
 
-        body_html = self._format_body(body, links)
+        is_html = already_html or bool(re.search(r"<[^>]+>", body))
+        if is_html:
+            links_html = "".join(
+                f'<p><a href="{url}" style="color:#1a0dab;">{url}</a></p>'
+                for url in links
+            )
+            body_html = body + links_html
+        else:
+            body_html = self._format_body(body, links)
 
         create_vals = {
             "name": subject,
