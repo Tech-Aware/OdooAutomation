@@ -31,6 +31,35 @@ class OdooEmailService:
         )
         self.mailing_model_id = model_ids[0] if model_ids else None
 
+    def _replace_link_placeholders(
+        self, html: str, links: List[str]
+    ) -> tuple[str, List[str]]:
+        """Remplace les balises [LIEN] par les URLs fournies.
+
+        Parameters
+        ----------
+        html: str
+            Contenu HTML dans lequel insérer les liens.
+        links: List[str]
+            URLs à insérer à la place des balises.
+
+        Returns
+        -------
+        tuple[str, List[str]]
+            Le HTML mis à jour et la liste des liens restants non utilisés.
+        """
+
+        remaining = list(links)
+        placeholder = "[LIEN]"
+        while placeholder in html and remaining:
+            url = remaining.pop(0)
+            anchor = f'<a href="{url}" style="color:#1a0dab;">{url}</a>'
+            html = html.replace(placeholder, anchor, 1)
+
+        # Supprime les balises restantes si le nombre de liens est insuffisant
+        html = html.replace(placeholder, "")
+        return html, remaining
+
     def _append_before_closing(self, html: str, addition: str) -> str:
         """Insère ``addition`` avant la balise de fermeture principale."""
         if not addition:
@@ -61,9 +90,10 @@ class OdooEmailService:
             HTML complet prêt à être envoyé.
         """
 
+        body, remaining = self._replace_link_placeholders(body, links)
         links_html = "".join(
             f'<p><a href="{url}" style="color:#1a0dab;">{url}</a></p>'
-            for url in links
+            for url in remaining
         )
         unsubscribe_html = (
             '<p><a href="/unsubscribe_from_list" '
@@ -125,11 +155,13 @@ class OdooEmailService:
 
         is_html = already_html or bool(re.search(r"<[^>]+>", body))
         if is_html:
-            links_html = "".join(
-                f'<p><a href="{url}" style="color:#1a0dab;">{url}</a></p>'
-                for url in links
-            )
-            body_html = self._append_before_closing(body, links_html)
+            body_html, remaining_links = self._replace_link_placeholders(body, links)
+            if remaining_links:
+                links_html = "".join(
+                    f'<p><a href="{url}" style="color:#1a0dab;">{url}</a></p>'
+                    for url in remaining_links
+                )
+                body_html = self._append_before_closing(body_html, links_html)
             body_html = self._append_unsubscribe_link(body_html)
         else:
             body_html = self._format_body(body, links)

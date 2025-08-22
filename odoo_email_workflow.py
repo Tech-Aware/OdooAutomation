@@ -50,9 +50,14 @@ def main() -> None:
             subject, html_body = openai_service.generate_marketing_email(text)
             links: list[str] = []
             while True:
-                preview = f"{subject}\n\n{html_body}" if subject else html_body
-                if links:
-                    preview += "\n\n" + "\n".join(links)
+                preview_body, remaining_links = email_service._replace_link_placeholders(
+                    html_body, links
+                )
+                preview = (
+                    f"{subject}\n\n{preview_body}" if subject else preview_body
+                )
+                if remaining_links:
+                    preview += "\n\n" + "\n".join(remaining_links)
                 action = telegram_service.send_message_with_buttons(
                     preview,
                     ["Modifier", "Liens", "Publier", "Programmer", "Terminer"],
