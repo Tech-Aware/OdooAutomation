@@ -59,7 +59,7 @@ def main() -> None:
                 preview = f"{subject}\n\n{preview_body}" if subject else preview_body
                 action = telegram_service.send_message_with_buttons(
                     preview,
-                    ["Modifier", "Liens", "Publier", "Programmer", "Terminer"],
+                    ["Modifier", "Liens", "Programmer", "Terminer"],
                 )
 
                 if action == "Modifier":
@@ -84,35 +84,6 @@ def main() -> None:
                     existing_urls = {u for _, u in new_links}
                     links = new_links + [l for l in links if l[1] not in existing_urls]
                     continue
-
-                if action == "Publier":
-                    target = datetime.now(tz)
-                    target_utc = target.astimezone(utc)
-                    try:
-                        email_service.schedule_email(
-                            subject,
-                            html_body,
-                            links,
-                            target_utc,
-                            ODOO_MAILING_LIST_IDS,
-                            already_html=True,
-                        )
-                        telegram_service.send_message("Email envoyé.")
-                    except xmlrpc.client.Fault as err:
-                        logger.exception(
-                            f"Erreur lors de l'envoi de l'email : {err}"
-                        )
-                        telegram_service.send_message(
-                            f"Erreur lors de l'envoi de l'email : {err}"
-                        )
-                    final_action = telegram_service.send_message_with_buttons(
-                        "Que souhaitez-vous faire ?", ["Recommencer", "Terminer"]
-                    )
-                    if final_action == "Terminer":
-                        telegram_service.send_message("Fin du workflow email.")
-                        return
-                    telegram_service.send_message("Prêt pour l'email marketing !")
-                    break
 
                 if action == "Programmer":
                     now = datetime.now(tz)
