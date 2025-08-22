@@ -9,7 +9,7 @@ from services.odoo_email_service import OdooEmailService
 
 def test_schedule_email_calls_odoo(monkeypatch):
     mock_models = MagicMock()
-    mock_models.execute_kw.side_effect = [[99], 42, 1, True]
+    mock_models.execute_kw.side_effect = [[99], 1, True]
 
     def fake_connect():
         return ("db", 1, "pwd", mock_models)
@@ -33,27 +33,20 @@ def test_schedule_email_calls_odoo(monkeypatch):
         "db",
         1,
         "pwd",
-        "link.tracker",
-        "create",
-        [{"url": "http://ex"}],
-    )
-    mock_models.execute_kw.assert_any_call(
-        "db",
-        1,
-        "pwd",
         "mailing.mailing",
         "create",
         [
             {
+                "name": "Sujet",
                 "subject": "Sujet",
                 "body_html": expected_body,
+                "body_plaintext": "Corps",
                 "mailing_type": "mail",
                 "schedule_type": "scheduled",
                 "email_from": "sender@example.com",
                 "schedule_date": "2024-05-29 06:00:00",
                 "mailing_model_id": 99,
                 "contact_list_ids": [(6, 0, [7])],
-                "links_ids": [(6, 0, [42])],
             }
         ],
     )
@@ -94,8 +87,10 @@ def test_schedule_email_uses_default_list(monkeypatch):
         "create",
         [
             {
+                "name": "Sujet",
                 "subject": "Sujet",
                 "body_html": "<p>Corps</p>",
+                "body_plaintext": "Corps",
                 "mailing_type": "mail",
                 "schedule_type": "scheduled",
                 "email_from": "sender@example.com",
