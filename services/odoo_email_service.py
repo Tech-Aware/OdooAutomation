@@ -9,9 +9,11 @@ from config.odoo_connect import get_odoo_connection
 from config import ODOO_MAILING_LIST_IDS, ODOO_EMAIL_FROM
 
 
+# Links par défaut pour les emails marketing.
+# L'ordre reflète les canaux privilégiés : Facebook puis site web.
 DEFAULT_LINKS = [
-    "https://www.cdfesplas.com",
     "https://www.facebook.com/cdfesplas",
+    "https://www.cdfesplas.com",
 ]
 
 
