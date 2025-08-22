@@ -35,11 +35,3 @@ TELEGRAM_USER_ID = int(os.getenv("TELEGRAM_USER_ID", "0"))
 # Required by the Facebook posting utilities to publish on a page.
 FACEBOOK_PAGE_ID = os.getenv("FACEBOOK_PAGE_ID", "")
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN", "")
-
-# --- Test Odoo connection -----------------------------------------------------
-try:
-    from pos_category_management.manage_pos_categories import update_pos_categories
-
-    update_pos_categories()
-except Exception as exc:
-    logger.exception("Erreur lors du test de connexion à Odoo : %s", exc)
