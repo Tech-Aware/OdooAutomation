@@ -37,6 +37,21 @@ class OdooEmailService:
         )
         self.mailing_model_id = model_ids[0] if model_ids else None
 
+    def _ensure_scheme(self, url: str) -> str:
+        """Ajoute ``https://`` si le schéma est manquant."""
+        return url if re.match(r"^https?://", url) else f"https://{url}"
+
+    def _normalize_links(self, links: List[str]) -> List[str]:
+        """Nettoie les URLs et supprime les doublons."""
+        seen = set()
+        result: List[str] = []
+        for link in links:
+            norm = self._ensure_scheme(link.strip())
+            if norm and norm not in seen:
+                result.append(norm)
+                seen.add(norm)
+        return result
+
     def _replace_link_placeholders(
         self, html: str, links: List[str]
     ) -> tuple[str, List[str]]:
@@ -59,19 +74,26 @@ class OdooEmailService:
             Le HTML mis à jour et la liste des liens restants non utilisés.
         """
 
-        remaining = list(links)
+        remaining = self._normalize_links(links)
         placeholder = "[LIEN]"
         while placeholder in html and remaining:
-            url = remaining.pop(0)
+            url = self._ensure_scheme(remaining.pop(0))
             idx = html.index(placeholder)
             after = html[idx + len(placeholder) :]
-            match = re.match(r"\s*([^\s<.,!?;:]+)([.,!?;:]?)", after)
+            match = re.match(r"\s*([^<\n\r]+)", after)
             if match:
-                word, punct = match.group(1), match.group(2)
                 full = match.group(0)
-                anchor_word = f'<a href="{url}" style="color:#1a0dab;">{word}</a>'
-                replacement = full.replace(word, anchor_word, 1)
-                html = html[:idx] + replacement + after[len(full):]
+                text = match.group(1)
+                leading_ws = full[: len(full) - len(text)]
+                text = text.rstrip()
+                punct = ""
+                if text and text[-1] in ".,!?;:":
+                    punct = text[-1]
+                    text = text[:-1]
+                replacement = (
+                    f"{leading_ws}<a href=\"{url}\" style=\"color:#1a0dab;\">{text}</a>{punct}"
+                )
+                html = html[:idx] + replacement + after[len(full) :]
             else:
                 anchor = f'<a href="{url}" style="color:#1a0dab;">{url}</a>'
                 html = html.replace(placeholder, anchor, 1)
@@ -109,6 +131,7 @@ class OdooEmailService:
             HTML complet prêt à être envoyé.
         """
 
+        links = self._normalize_links(links)
         body, remaining = self._replace_link_placeholders(body, links)
         links_html = "".join(
             f'<p><a href="{url}" style="color:#1a0dab;">{url}</a></p>'
@@ -171,7 +194,7 @@ class OdooEmailService:
 
         if list_ids is None:
             list_ids = ODOO_MAILING_LIST_IDS
-        links = list(links) + [l for l in DEFAULT_LINKS if l not in links]
+        links = self._normalize_links(list(links) + DEFAULT_LINKS)
 
         is_html = already_html or bool(re.search(r"<[^>]+>", body))
         if is_html:
