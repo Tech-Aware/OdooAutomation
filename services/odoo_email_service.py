@@ -36,6 +36,9 @@ class OdooEmailService:
     ) -> tuple[str, List[str]]:
         """Remplace les balises [LIEN] par les URLs fournies.
 
+        Si la balise précède un mot (par exemple ``[LIEN] Facebook``),
+        l'URL est déplacée après ce mot.
+
         Parameters
         ----------
         html: str
@@ -53,8 +56,22 @@ class OdooEmailService:
         placeholder = "[LIEN]"
         while placeholder in html and remaining:
             url = remaining.pop(0)
-            anchor = f'<a href="{url}" style="color:#1a0dab;">{url}</a>'
-            html = html.replace(placeholder, anchor, 1)
+            idx = html.index(placeholder)
+            after = html[idx + len(placeholder) :]
+            match = re.match(r"\s*([^\s<.,!?;:]+)([.,!?;:]?)", after)
+            if match:
+                word, punct = match.group(1), match.group(2)
+                anchor = (
+                    f"{word} <a href=\"{url}\" style=\"color:#1a0dab;\">{url}</a>{punct}"
+                )
+                html = (
+                    html[:idx]
+                    + anchor
+                    + after[len(match.group(0)) :]
+                )
+            else:
+                anchor = f'<a href="{url}" style="color:#1a0dab;">{url}</a>'
+                html = html.replace(placeholder, anchor, 1)
 
         # Supprime les balises restantes si le nombre de liens est insuffisant
         html = html.replace(placeholder, "")
