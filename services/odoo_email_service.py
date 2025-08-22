@@ -51,13 +51,35 @@ class OdooEmailService:
             f'<p><a href="{url}" style="color:#1a0dab;">{url}</a></p>'
             for url in links
         )
+        unsubscribe_html = (
+            '<p><a href="/unsubscribe_from_list" '
+            'style="color:#1a0dab;">Se désabonner</a></p>'
+        )
         return (
             "<div style=\"font-family:Arial,sans-serif;line-height:1.6;"
             "color:#333;max-width:600px;margin:auto;\">"
             f"<p>{body}</p>"
             f"{links_html}"
+            f"{unsubscribe_html}"
             "</div>"
         )
+
+    def _append_unsubscribe_link(self, html: str) -> str:
+        """Ajoute le lien de désinscription avant la balise de fermeture."""
+
+        unsubscribe_html = (
+            '<p><a href="/unsubscribe_from_list" '
+            'style="color:#1a0dab;">Se désabonner</a></p>'
+        )
+        body_pattern = re.compile(r"</body>", re.IGNORECASE)
+        if body_pattern.search(html):
+            return body_pattern.sub(unsubscribe_html + "</body>", html, count=1)
+
+        div_pattern = re.compile(r"</div>\s*$", re.IGNORECASE)
+        if div_pattern.search(html):
+            return div_pattern.sub(unsubscribe_html + "</div>", html)
+
+        return html + unsubscribe_html
 
     @log_execution
     def schedule_email(
@@ -101,7 +123,7 @@ class OdooEmailService:
                 f'<p><a href="{url}" style="color:#1a0dab;">{url}</a></p>'
                 for url in links
             )
-            body_html = body + links_html
+            body_html = self._append_unsubscribe_link(body + links_html)
         else:
             body_html = self._format_body(body, links)
 

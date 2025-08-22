@@ -26,6 +26,7 @@ def test_format_body_returns_fragment(monkeypatch):
     assert "<!DOCTYPE" not in html
     assert "<html" not in html.lower()
     assert html.startswith("<div")
+    assert "/unsubscribe_from_list" in html
 
 
 def test_schedule_email_calls_odoo(monkeypatch):
@@ -98,6 +99,7 @@ def test_schedule_email_accepts_html(monkeypatch):
     dt = datetime(2024, 5, 29, 8, 0, tzinfo=ZoneInfo("Europe/Paris"))
     html = "<html><body><p>Corps</p></body></html>"
     service._format_body = MagicMock(side_effect=AssertionError("should not be called"))
+    expected_html = service._append_unsubscribe_link(html)
 
     mailing_id = service.schedule_email("Sujet", html, [], dt, already_html=True)
 
@@ -112,8 +114,8 @@ def test_schedule_email_accepts_html(monkeypatch):
             {
                 "name": "Sujet",
                 "subject": "Sujet",
-                "body_arch": html,
-                "body_html": html,
+                "body_arch": expected_html,
+                "body_html": expected_html,
                 "body_plaintext": html,
                 "mailing_type": "mail",
                 "schedule_type": "scheduled",

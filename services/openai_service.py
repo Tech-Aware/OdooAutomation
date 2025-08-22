@@ -1,5 +1,6 @@
 import base64
 import os
+import re
 from io import BytesIO
 from pathlib import Path
 from typing import List
@@ -87,7 +88,8 @@ class OpenAIService:
                 subject, html_body = content.split("\n\n", 1)
             else:
                 subject, html_body = content, ""
-            return subject.strip(), html_body.strip()
+            subject = re.sub(r"^[Oo]bjet\s*:\s*", "", subject).strip()
+            return subject, html_body.strip()
         except Exception as err:  # pragma: no cover - log then ignore
             self.logger.exception(
                 f"Erreur lors de la génération de l'email : {err}"

@@ -50,7 +50,7 @@ def main() -> None:
             subject, html_body = openai_service.generate_marketing_email(text)
             links: list[str] = []
             while True:
-                preview = f"Objet: {subject}\n\n{html_body}"
+                preview = f"{subject}\n\n{html_body}" if subject else html_body
                 action = telegram_service.send_message_with_buttons(
                     preview,
                     ["Modifier", "Liens", "Publier", "Programmer", "Terminer"],

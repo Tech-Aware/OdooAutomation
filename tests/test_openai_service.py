@@ -79,6 +79,17 @@ def test_generate_marketing_email(monkeypatch):
     assert body == html
 
 
+def test_generate_marketing_email_strips_prefix(monkeypatch):
+    html = "<html><body><p>Corps</p></body></html>"
+    dummy_client = DummyClient(content=f"Objet : Promotion\n\n{html}")
+    monkeypatch.setattr("services.openai_service.OpenAI", lambda: dummy_client)
+    service = OpenAIService(DummyLogger())
+
+    subject, body = service.generate_marketing_email("Infos")
+    assert subject == "Promotion"
+    assert body == html
+
+
 @patch("services.openai_service.OpenAI")
 def test_generate_illustrations_returns_bytesio(mock_openai):
     mock_client = MagicMock()
