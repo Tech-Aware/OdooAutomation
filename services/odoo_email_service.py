@@ -30,6 +30,34 @@ class OdooEmailService:
         )
         self.mailing_model_id = model_ids[0] if model_ids else None
 
+    def _format_body(self, body: str, links: List[str]) -> str:
+        """Génère un contenu HTML simple et lisible pour l'email.
+
+        Parameters
+        ----------
+        body: str
+            Texte principal du message.
+        links: List[str]
+            Liste d'URL à intégrer comme liens cliquables.
+
+        Returns
+        -------
+        str
+            HTML complet prêt à être envoyé.
+        """
+
+        links_html = "".join(
+            f'<p><a href="{url}" style="color:#1a0dab;">{url}</a></p>'
+            for url in links
+        )
+        return (
+            "<div style=\"font-family:Arial,sans-serif;line-height:1.6;"
+            "color:#333;max-width:600px;margin:auto;\">"
+            f"<p>{body}</p>"
+            f"{links_html}"
+            "</div>"
+        )
+
     @log_execution
     def schedule_email(
         self,
@@ -61,12 +89,7 @@ class OdooEmailService:
         if list_ids is None:
             list_ids = ODOO_MAILING_LIST_IDS
 
-        links_html = (
-            "<br>".join(f'<a href="{url}">{url}</a>' for url in links) if links else ""
-        )
-        body_html = f"<p>{body}</p>"
-        if links_html:
-            body_html += f"<br>{links_html}"
+        body_html = self._format_body(body, links)
 
         create_vals = {
             "name": subject,
