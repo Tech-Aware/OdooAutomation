@@ -16,7 +16,7 @@ class TestAuthOdoo(unittest.TestCase):
         models = MagicMock()
         models.execute_kw.return_value = []
 
-        def server_proxy(url):
+        def server_proxy(url, *args, **kwargs):
             if url.endswith("/common"):
                 return common
             if url.endswith("/object"):
