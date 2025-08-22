@@ -51,6 +51,8 @@ def main() -> None:
             links: list[str] = []
             while True:
                 preview = f"{subject}\n\n{html_body}" if subject else html_body
+                if links:
+                    preview += "\n\n" + "\n".join(links)
                 action = telegram_service.send_message_with_buttons(
                     preview,
                     ["Modifier", "Liens", "Publier", "Programmer", "Terminer"],

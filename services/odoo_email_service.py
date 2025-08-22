@@ -31,6 +31,20 @@ class OdooEmailService:
         )
         self.mailing_model_id = model_ids[0] if model_ids else None
 
+    def _append_before_closing(self, html: str, addition: str) -> str:
+        """Insère ``addition`` avant la balise de fermeture principale."""
+        if not addition:
+            return html
+        body_pattern = re.compile(r"</body>", re.IGNORECASE)
+        if body_pattern.search(html):
+            return body_pattern.sub(addition + "</body>", html, count=1)
+
+        div_pattern = re.compile(r"</div>\s*$", re.IGNORECASE)
+        if div_pattern.search(html):
+            return div_pattern.sub(addition + "</div>", html)
+
+        return html + addition
+
     def _format_body(self, body: str, links: List[str]) -> str:
         """Génère un contenu HTML simple et lisible pour l'email.
 
@@ -71,15 +85,7 @@ class OdooEmailService:
             '<p><a href="/unsubscribe_from_list" '
             'style="color:#1a0dab;">Se désabonner</a></p>'
         )
-        body_pattern = re.compile(r"</body>", re.IGNORECASE)
-        if body_pattern.search(html):
-            return body_pattern.sub(unsubscribe_html + "</body>", html, count=1)
-
-        div_pattern = re.compile(r"</div>\s*$", re.IGNORECASE)
-        if div_pattern.search(html):
-            return div_pattern.sub(unsubscribe_html + "</div>", html)
-
-        return html + unsubscribe_html
+        return self._append_before_closing(html, unsubscribe_html)
 
     @log_execution
     def schedule_email(
@@ -123,7 +129,8 @@ class OdooEmailService:
                 f'<p><a href="{url}" style="color:#1a0dab;">{url}</a></p>'
                 for url in links
             )
-            body_html = self._append_unsubscribe_link(body + links_html)
+            body_html = self._append_before_closing(body, links_html)
+            body_html = self._append_unsubscribe_link(body_html)
         else:
             body_html = self._format_body(body, links)
 
