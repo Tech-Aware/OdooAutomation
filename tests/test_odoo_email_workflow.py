@@ -61,8 +61,8 @@ class DummyOdooEmailService:
     def __init__(self, logger):
         self.scheduled = False
 
-    def _replace_link_placeholders(self, html, links):
-        return html, []
+    def format_links_preview(self, links):
+        return ""
 
     def schedule_email(self, subject, body, links, dt, list_ids, already_html=True):
         self.scheduled = True

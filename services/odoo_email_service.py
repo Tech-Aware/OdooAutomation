@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from zoneinfo import ZoneInfo
 import xmlrpc.client
 import re
@@ -11,9 +11,9 @@ from config import ODOO_MAILING_LIST_IDS, ODOO_EMAIL_FROM
 
 # Links par défaut pour les emails marketing.
 # L'ordre reflète les canaux privilégiés : Facebook puis site web.
-DEFAULT_LINKS = [
-    "https://www.facebook.com/cdfesplas",
-    "https://www.cdfesplas.com",
+DEFAULT_LINKS: List[Tuple[str, str]] = [
+    ("Facebook", "https://www.facebook.com/cdfesplas"),
+    ("Site web", "https://www.cdfesplas.com"),
 ]
 
 
@@ -43,65 +43,36 @@ class OdooEmailService:
         """Ajoute ``https://`` si le schéma est manquant."""
         return url if re.match(r"^https?://", url) else f"https://{url}"
 
-    def _normalize_links(self, links: List[str]) -> List[str]:
-        """Nettoie les URLs et supprime les doublons."""
+    def _normalize_links(self, links: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
+        """Nettoie les URLs, noms et supprime les doublons."""
         seen = set()
-        result: List[str] = []
-        for link in links:
-            norm = self._ensure_scheme(link.strip())
-            if norm and norm not in seen:
-                result.append(norm)
-                seen.add(norm)
+        result: List[Tuple[str, str]] = []
+        for name, url in links:
+            clean_name = name.strip()
+            norm_url = self._ensure_scheme(url.strip())
+            if norm_url and norm_url not in seen:
+                result.append((clean_name, norm_url))
+                seen.add(norm_url)
         return result
 
-    def _replace_link_placeholders(
-        self, html: str, links: List[str]
-    ) -> tuple[str, List[str]]:
-        """Remplace les balises ``[LIEN]`` par les URLs fournies.
+    def _build_links_section(self, links: List[Tuple[str, str]]) -> str:
+        """Construit la section HTML des liens utiles."""
+        links = self._normalize_links(links)
+        if not links:
+            return ""
+        items = "".join(
+            f'<p>{name} : <a href="{url}" style="color:#1a0dab;">{url}</a></p>'
+            for name, url in links
+        )
+        return f'<div><p>Liens utiles :</p>{items}</div>'
 
-        Si la balise est immédiatement suivie d'un mot (ex. ``[LIEN] Facebook``),
-        ce mot devient l'ancre cliquable pointant vers l'URL correspondante,
-        sans afficher l'URL en clair.
-
-        Parameters
-        ----------
-        html: str
-            Contenu HTML dans lequel insérer les liens.
-        links: List[str]
-            URLs à insérer à la place des balises.
-
-        Returns
-        -------
-        tuple[str, List[str]]
-            Le HTML mis à jour et la liste des liens restants non utilisés.
-        """
-
-        remaining = self._normalize_links(links)
-        placeholder = "[LIEN]"
-        while placeholder in html and remaining:
-            url = self._ensure_scheme(remaining.pop(0))
-            idx = html.index(placeholder)
-            after = html[idx + len(placeholder) :]
-            match = re.match(r"\s*([^<\n\r]+)", after)
-            if match:
-                full = match.group(0)
-                text = match.group(1)
-                leading_ws = full[: len(full) - len(text)]
-                text = text.rstrip()
-                punct = ""
-                if text and text[-1] in ".,!?;:":
-                    punct = text[-1]
-                    text = text[:-1]
-                replacement = (
-                    f"{leading_ws}<a href=\"{url}\" style=\"color:#1a0dab;\">{text}</a>{punct}"
-                )
-                html = html[:idx] + replacement + after[len(full) :]
-            else:
-                anchor = f'<a href="{url}" style="color:#1a0dab;">{url}</a>'
-                html = html.replace(placeholder, anchor, 1)
-
-        html = html.replace(placeholder, "")
-        return html, remaining
+    def format_links_preview(self, links: List[Tuple[str, str]]) -> str:
+        """Retourne une représentation texte des liens."""
+        links = self._normalize_links(links)
+        if not links:
+            return ""
+        lines = "\n".join(f"{name} : {url}" for name, url in links)
+        return f"Liens utiles :\n{lines}"
 
     def _append_before_closing(self, html: str, addition: str) -> str:
         """Insère ``addition`` avant la balise de fermeture principale."""
@@ -117,15 +88,15 @@ class OdooEmailService:
 
         return html + addition
 
-    def _format_body(self, body: str, links: List[str]) -> str:
+    def _format_body(self, body: str, links: List[Tuple[str, str]]) -> str:
         """Génère un contenu HTML simple et lisible pour l'email.
 
         Parameters
         ----------
         body: str
             Texte principal du message.
-        links: List[str]
-            Liste d'URL à intégrer comme liens cliquables.
+        links: List[Tuple[str, str]]
+            Paires ``(nom, URL)`` à intégrer comme liens cliquables.
 
         Returns
         -------
@@ -133,18 +104,13 @@ class OdooEmailService:
             HTML complet prêt à être envoyé.
         """
 
-        links = self._normalize_links(links)
-        body, remaining = self._replace_link_placeholders(body, links)
-        links_html = "".join(
-            f'<p><a href="{url}" style="color:#1a0dab;">{url}</a></p>'
-            for url in remaining
-        )
+        links_html = self._build_links_section(links)
         unsubscribe_html = (
             '<p><a href="/unsubscribe_from_list" '
             'style="color:#1a0dab;">Se désabonner</a></p>'
         )
         return (
-            "<div style=\"font-family:Arial,sans-serif;line-height:1.6;"
+            "<div style=\"font-family:Arial,sans-serif;line-height:1.6;\""
             "color:#333;max-width:600px;margin:auto;\">"
             f"<p>{body}</p>"
             f"{links_html}"
@@ -166,7 +132,7 @@ class OdooEmailService:
         self,
         subject: str,
         body: str,
-        links: List[str],
+        links: List[Tuple[str, str]],
         send_datetime: datetime,
         list_ids: Optional[List[int]] = None,
         already_html: bool = False,
@@ -180,8 +146,8 @@ class OdooEmailService:
         body: str
             Contenu principal de l'email. Peut être du texte brut ou un HTML
             complet.
-        links: List[str]
-            Liste d'URL à ajouter au contenu.
+        links: List[Tuple[str, str]]
+            Paires ``(nom, URL)`` à ajouter au contenu.
         send_datetime: datetime
             Date et heure d'envoi (avec fuseau horaire).
         already_html: bool, optional
@@ -200,13 +166,7 @@ class OdooEmailService:
 
         is_html = already_html or bool(re.search(r"<[^>]+>", body))
         if is_html:
-            body_html, remaining_links = self._replace_link_placeholders(body, links)
-            if remaining_links:
-                links_html = "".join(
-                    f'<p><a href="{url}" style="color:#1a0dab;">{url}</a></p>'
-                    for url in remaining_links
-                )
-                body_html = self._append_before_closing(body_html, links_html)
+            body_html = self._append_before_closing(body, self._build_links_section(links))
             body_html = self._append_unsubscribe_link(body_html)
         else:
             body_html = self._format_body(body, links)
