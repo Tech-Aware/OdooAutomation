@@ -38,7 +38,15 @@ def run_workflow(
 
     try:
         action = telegram_service.send_message_with_buttons(
-            "Bienvenue dans le workflow d'email marketing.",
+            (
+                "Bienvenue dans l'assistant d'email marketing ! Il vous permet de :\n"
+                "- Générer un email promotionnel personnalisé grâce à l'IA à partir de votre contenu.\n"
+                "- Modifier l'objet ou le corps du message selon vos besoins.\n"
+                "- Ajouter des liens vers vos pages ou produits.\n"
+                "- Programmer l'envoi de votre campagne au moment opportun.\n"
+                "- Revenir au menu principal à tout moment.\n\n"
+                "Pour commencer, sélectionnez 'Continuer' puis fournissez votre contenu sous forme de texte ou d'audio."
+            ),
             ["Continuer", "Retour"],
             timeout=timeout,
         )
@@ -130,9 +138,7 @@ def run_workflow(
                 telegram_service.send_message("Retour au menu principal.")
                 return
     except TimeoutError:
-        telegram_service.send_message(
-            "Inactivité prolongée, retour au menu principal."
-        )
+        telegram_service.send_message("Inactivité prolongée, retour au menu principal.")
         return
     except Exception as err:  # pragma: no cover - log then continue
         logger.exception(f"Erreur lors du traitement : {err}")
@@ -149,15 +155,11 @@ def main() -> None:
         try:
             email_service = OdooEmailService(logger)
         except RuntimeError as err:
-            logger.exception(
-                f"Initialisation du service Odoo échouée : {err}"
-            )
+            logger.exception(f"Initialisation du service Odoo échouée : {err}")
             telegram_service.send_message(str(err))
             return
 
-        run_workflow(
-            logger, telegram_service, openai_service, email_service
-        )
+        run_workflow(logger, telegram_service, openai_service, email_service)
     except KeyboardInterrupt:
         logger.info("Arrêt manuel du programme")
     finally:
@@ -166,4 +168,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
