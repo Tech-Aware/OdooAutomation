@@ -44,11 +44,12 @@ def run_workflow(
         return
 
     try:
-        text = telegram_service.ask_text(
+        text = telegram_service.ask_text_or_return(
             "Envoyez le sujet de la publication via un message audio ou un message texte !",
             timeout=timeout,
         )
         if not text:
+            telegram_service.send_message("Retour au menu principal.")
             return
 
         last_post = openai_service.generate_event_post(text)

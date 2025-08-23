@@ -39,6 +39,9 @@ class DummyTelegramService:
     def send_message(self, msg):
         self.sent_messages.append(msg)
 
+    def stop(self):
+        pass
+
     def wait_for_message(self):
         msg = self.messages[self.index]
         self.index += 1
@@ -55,6 +58,13 @@ class DummyTelegramService:
 
     def ask_text(self, prompt, timeout=None):
         return self.wait_for_message()
+
+    def ask_text_or_return(self, prompt, timeout=None):
+        msg = self.wait_for_message()
+        cmd = msg.lstrip("/").lower()
+        if cmd.startswith("retour"):
+            return None
+        return msg
 
 
 class DummyOdooEmailService:
