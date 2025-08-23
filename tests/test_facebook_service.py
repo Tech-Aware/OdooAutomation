@@ -5,6 +5,7 @@ import logging
 import unittest
 from io import BytesIO
 import importlib
+from datetime import datetime, timezone
 
 
 def _server_proxy(url):
@@ -141,3 +142,21 @@ def test_post_to_page_logs_api_error(mock_post, monkeypatch, caplog):
         service.post_to_facebook_page("hello")
 
     assert "bad request" in caplog.text
+
+
+@patch.object(config, "FACEBOOK_PAGE_ID", "123")
+@patch.object(config, "PAGE_ACCESS_TOKEN", "token")
+@patch("services.facebook_service.requests.post")
+def test_schedule_post_uses_utc_timestamp(mock_post):
+    mock_response = Mock()
+    mock_response.raise_for_status = Mock()
+    mock_response.text = "ok"
+    mock_post.return_value = mock_response
+
+    service = FacebookService(logger=logging.getLogger("test"))
+    publish_time = datetime(2024, 1, 1, 12, 0)
+    service.schedule_post_to_facebook_page("hello", publish_time)
+
+    kwargs = mock_post.call_args.kwargs
+    expected_ts = int(datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc).timestamp())
+    assert kwargs["data"]["scheduled_publish_time"] == expected_ts
