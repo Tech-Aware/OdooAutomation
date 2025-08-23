@@ -53,11 +53,12 @@ def run_workflow(
         if action == "Retour":
             return
 
-        text = telegram_service.ask_text(
+        text = telegram_service.ask_text_or_return(
             "Envoyez le sujet du mail via un message audio ou un message texte !",
             timeout=timeout,
         )
         if not text:
+            telegram_service.send_message("Retour au menu principal.")
             return
 
         subject, html_body = openai_service.generate_marketing_email(text)

@@ -39,6 +39,9 @@ class DummyTelegramService:
     def start(self):
         pass
 
+    def stop(self):
+        pass
+
     def send_message(self, msg):
         pass
 
@@ -66,6 +69,13 @@ class DummyTelegramService:
 
     def ask_text(self, prompt, timeout=None):
         return self.wait_for_message()
+
+    def ask_text_or_return(self, prompt, timeout=None):
+        msg = self.wait_for_message()
+        cmd = msg.lstrip("/").lower()
+        if cmd.startswith("retour"):
+            return None
+        return msg
 
 
 class EditingDummyTelegramService(DummyTelegramService):

@@ -236,6 +236,59 @@ class TelegramService:
             ).result()
         except asyncio.TimeoutError as err:
             raise TimeoutError from err
+
+    async def _ask_text_or_return(
+        self,
+        prompt: str,
+        return_label: str,
+        timeout: float | None = None,
+    ) -> str | None:
+        """Envoie ``prompt`` avec un bouton de retour et attend une réponse."""
+        assert self.loop is not None
+        self._callback_future = self.loop.create_future()
+        keyboard = InlineKeyboardMarkup(
+            [[InlineKeyboardButton(return_label, callback_data="0")]]
+        )
+        await self.app.bot.send_message(
+            chat_id=self.allowed_user_id,
+            text=prompt,
+            reply_markup=keyboard,
+        )
+        self._voice_future = self.loop.create_future()
+        self._text_future = self.loop.create_future()
+        done, pending = await asyncio.wait(
+            [self._callback_future, self._voice_future, self._text_future],
+            return_when=asyncio.FIRST_COMPLETED,
+            timeout=timeout,
+        )
+        if not done:
+            for fut in pending:
+                fut.cancel()
+            raise asyncio.TimeoutError
+        result_future = next(iter(done))
+        for fut in pending:
+            fut.cancel()
+        if result_future is self._callback_future:
+            return None
+        return result_future.result()
+
+    @log_execution
+    def ask_text_or_return(
+        self,
+        prompt: str,
+        timeout: float | None = None,
+        return_label: str = "Retour au menu principal",
+    ) -> str | None:
+        """Demande un texte ou retourne ``None`` si l'utilisateur choisit de revenir."""
+        if not self.loop:
+            raise RuntimeError("Le bot Telegram n'est pas démarré")
+        try:
+            return asyncio.run_coroutine_threadsafe(
+                self._ask_text_or_return(prompt, return_label, timeout),
+                self.loop,
+            ).result()
+        except asyncio.TimeoutError as err:
+            raise TimeoutError from err
     
     # ------------------------------------------------------------------
     # Questions avec boutons
