@@ -48,20 +48,3 @@ def post_to_facebook_page(message, image_url=None):
     post_id = response.get("id")
     logger.info(f"Post published with id {post_id}")
     return post_id
-
-@log_execution
-def cross_post_to_groups(post_id, group_ids):
-    """Cross-post an existing page post to multiple Facebook groups."""
-    results = []
-    link = f"https://www.facebook.com/{post_id}"
-    for gid in group_ids:
-        url = f"{GRAPH_API_URL}/{gid}/feed"
-        data = {
-            "link": link,
-            "access_token": ACCESS_TOKEN,
-        }
-        response = _post(url, data)
-        gid_post_id = response.get("id")
-        results.append(gid_post_id)
-        logger.info(f"Post {post_id} shared to group {gid} as {gid_post_id}")
-    return results

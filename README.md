@@ -50,7 +50,7 @@ Ces variables permettent de se connecter à Odoo, à l'API OpenAI, à Facebook e
 ## Services principaux
 
 - **OpenAIService** (`services/openai_service.py`) : génération de posts ou d'emails, correction de texte, création d'illustrations et transcription audio via l'API OpenAI.
-- **FacebookService** (`services/facebook_service.py`) : publication, planification et partage de posts sur la page Facebook principale ou dans des groupes.
+- **FacebookService** (`services/facebook_service.py`) : publication et planification de posts sur la page Facebook principale.
 - **OdooEmailService** (`services/odoo_email_service.py`) : construction d'emails marketing enrichis de liens utiles et planification dans Odoo.
 - **AudioService** (`services/audio_service.py`) : lecture de fichiers audio (simulés par des `.txt`) pour extraire du texte.
 - **TelegramService** (`services/telegram_service.py`) : bot interactif capable de recevoir texte, voix, images et de proposer des boutons de choix.
@@ -106,7 +106,7 @@ Ces variables permettent de se connecter à Odoo, à l'API OpenAI, à Facebook e
 
 Les workflows `audio_post_workflow.py` et `odoo_email_workflow.py` guident l'utilisateur pas à pas grâce au bot Telegram :
 
-- **audio_post_workflow.py** : attend un message vocal ou texte, génère un post d'événement, propose des corrections, permet de joindre ou générer des images puis publie ou programme le contenu sur Facebook et dans des groupes.
+- **audio_post_workflow.py** : attend un message vocal ou texte, génère un post d'événement, propose des corrections, permet de joindre ou générer des images puis publie ou programme le contenu sur Facebook.
 - **odoo_email_workflow.py** : compose un email marketing complet, suggère des liens utiles, autorise les corrections et planifie l'envoi dans Odoo à une date choisie.
 
 ## Service Telegram
@@ -125,7 +125,7 @@ service.start()
 service.send_message("Bot prêt !")
 ```
 
-`TelegramService` propose aussi des méthodes interactives comme `ask_text` (qui accepte une réponse texte ou vocale), `ask_options`, `ask_yes_no`, `ask_groups`, `wait_for_voice_message` ou `ask_image`, exploitées par des scripts tels que `audio_post_workflow.py`.
+`TelegramService` propose aussi des méthodes interactives comme `ask_text` (qui accepte une réponse texte ou vocale), `ask_options`, `ask_yes_no`, `wait_for_voice_message` ou `ask_image`, exploitées par des scripts tels que `audio_post_workflow.py`.
 
 ## Exécution des tests
 

@@ -47,9 +47,6 @@ class DummyTelegramService:
         self.index += 1
         return msg
 
-    def ask_groups(self):
-        return []
-
     def send_message_with_buttons(self, text, options):
         msg = self.wait_for_message()
         cmd = msg.lstrip("/").lower()
@@ -88,9 +85,6 @@ class DummyFacebookService:
 
     def schedule_post_to_facebook_page(self, text, publish_time, image_path):
         self.scheduled = (text, publish_time, image_path)
-
-    def cross_post_to_groups(self, text, groups, image_path):
-        pass
 
 
 class IllustrationDummyOpenAIService(DummyOpenAIService):

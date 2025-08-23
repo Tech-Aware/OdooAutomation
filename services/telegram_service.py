@@ -250,19 +250,6 @@ class TelegramService:
         return response == "Oui"
 
     @log_execution
-    def ask_groups(self) -> List[str]:
-        groups = []
-        data = config.load_group_data()
-        options = list(data.keys())
-        options.append("Terminer")
-        while True:
-            choice = self.ask_options("Choisissez un groupe ou Terminer", options)
-            if choice == "Terminer":
-                break
-            groups.append(choice)
-        return groups
-
-    @log_execution
     def ask_list(self, prompt: str, options: List[str]) -> List[str]:
         """Permet de sélectionner plusieurs éléments dans ``options``."""
         selected: List[str] = []

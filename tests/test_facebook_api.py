@@ -48,22 +48,6 @@ class FacebookApiTests(unittest.TestCase):
             expected_data,
         )
 
-    @patch.object(fb, "PAGE_ID", "123")
-    @patch.object(fb, "ACCESS_TOKEN", "token")
-    @patch.object(fb, "_post")
-    def test_cross_post_to_groups(self, mock_post, *_):
-        mock_post.side_effect = [
-            {"id": "g1"},
-            {"id": "g2"},
-        ]
-        ids = fb.cross_post_to_groups("pagepost", ["1", "2"])
-        self.assertEqual(ids, ["g1", "g2"])
-        expected_calls = [
-            ("https://graph.facebook.com/1/feed", {"link": "https://www.facebook.com/pagepost", "access_token": "token"}),
-            ("https://graph.facebook.com/2/feed", {"link": "https://www.facebook.com/pagepost", "access_token": "token"}),
-        ]
-        self.assertEqual(mock_post.call_args_list, [((u, d),) for u, d in expected_calls])
-
 
 if __name__ == "__main__":
     unittest.main()
