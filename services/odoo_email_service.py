@@ -162,7 +162,7 @@ class OdooEmailService:
 
         if list_ids is None:
             list_ids = ODOO_MAILING_LIST_IDS
-        links = self._normalize_links(list(links))
+        links = self._normalize_links(list(links) + DEFAULT_LINKS)
 
         is_html = already_html or bool(re.search(r"<[^>]+>", body))
         if is_html:

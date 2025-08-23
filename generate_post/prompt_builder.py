@@ -8,6 +8,7 @@ from typing import Dict
 TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "prompts", "event_template.txt")
 
 _FIELDS = {
+    "objet": "",
     "date": "",
     "horaires": "",
     "lieu": "",

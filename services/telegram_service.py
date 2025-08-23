@@ -77,6 +77,26 @@ class TelegramService:
         while self.loop is None:
             time.sleep(0.1)
 
+    @log_execution
+    def stop(self) -> None:
+        """Arrête le bot Telegram et remet en place le webhook si nécessaire."""
+        if not self.loop:
+            return
+
+        async def _stop() -> None:
+            await self.app.updater.stop()
+            await self.app.stop()
+            await self.app.shutdown()
+            if config.TELEGRAM_WEBHOOK_URL:
+                await self.app.bot.set_webhook(url=config.TELEGRAM_WEBHOOK_URL)
+
+        asyncio.run_coroutine_threadsafe(_stop(), self.loop).result()
+        self.loop.call_soon_threadsafe(self.loop.stop)
+        if self._thread:
+            self._thread.join()
+        self.loop = None
+        self._thread = None
+
     # ------------------------------------------------------------------
     # Envoi de messages
     # ------------------------------------------------------------------

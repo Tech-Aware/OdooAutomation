@@ -1,5 +1,6 @@
 Rédige un post pour les réseaux sociaux à partir des informations ci-dessous.
 
+- Objet : {objet}
 - Date : {date}
 - Horaires : {horaires}
 - Lieu : {lieu}
