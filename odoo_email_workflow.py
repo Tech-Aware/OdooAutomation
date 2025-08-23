@@ -35,12 +35,16 @@ def run_workflow(
 
     utc = ZoneInfo("UTC")
 
-    telegram_service.send_message(
-        "Bienvenue dans le workflow d'email marketing. "
-        "Envoyez le sujet du mail via un message audio ou un message texte !"
+    action = telegram_service.send_message_with_buttons(
+        "Bienvenue dans le workflow d'email marketing.",
+        ["Continuer", "Retour"],
     )
+    if action == "Retour":
+        return
 
-    text = telegram_service.wait_for_message()
+    text = telegram_service.ask_text(
+        "Envoyez le sujet du mail via un message audio ou un message texte !",
+    )
     if not text:
         return
 

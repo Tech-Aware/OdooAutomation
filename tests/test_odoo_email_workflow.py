@@ -27,7 +27,7 @@ class DummyTelegramService:
     def __init__(self, logger, openai_service):
         self.logger = logger
         self.openai_service = openai_service
-        self.messages = ["contenu", "/programmer", "/terminer"]
+        self.messages = ["/continuer", "contenu", "/programmer", "/terminer"]
         self.index = 0
         self.buttons_calls = []
         self.sent_messages = []
@@ -54,7 +54,7 @@ class DummyTelegramService:
         return options[0]
 
     def ask_text(self, prompt):
-        return ""
+        return self.wait_for_message()
 
 
 class DummyOdooEmailService:
