@@ -39,6 +39,8 @@ ODOO_EMAIL_FROM = os.getenv("ODOO_EMAIL_FROM", "")
 # Used by ``telegram_service`` to send notifications to a specific user.
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_USER_ID = int(os.getenv("TELEGRAM_USER_ID", "0"))
+# URL du webhook Telegram pour réactiver les notifications après l'arrêt du bot
+TELEGRAM_WEBHOOK_URL = os.getenv("TELEGRAM_WEBHOOK_URL", "")
 
 # --- Facebook configuration ---------------------------------------------------
 # Required by the Facebook posting utilities to publish on a page.

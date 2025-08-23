@@ -1,4 +1,5 @@
 import asyncio
+import threading
 from io import BytesIO
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -134,3 +135,38 @@ def test_send_message_with_buttons_returns_choice(mock_app):
     assert result == "b"
     assert app.bot.send_message.await_count == 1
     loop.close()
+
+
+@patch("services.telegram_service.Application")
+def test_stop_stops_polling_and_thread(mock_app):
+    builder = MagicMock()
+    builder.token.return_value = builder
+    app = MagicMock()
+    app.add_handler = MagicMock()
+    app.updater.stop = AsyncMock()
+    app.stop = AsyncMock()
+    app.shutdown = AsyncMock()
+    app.bot.set_webhook = AsyncMock()
+    builder.build.return_value = app
+    mock_app.builder.return_value = builder
+
+    service = TelegramService(MagicMock())
+
+    loop = asyncio.new_event_loop()
+
+    def run_loop():
+        asyncio.set_event_loop(loop)
+        loop.run_forever()
+
+    thread = threading.Thread(target=run_loop)
+    thread.start()
+    service.loop = loop
+    service._thread = thread
+
+    service.stop()
+
+    app.updater.stop.assert_awaited_once()
+    app.stop.assert_awaited_once()
+    app.shutdown.assert_awaited_once()
+    thread.join(timeout=1)
+    assert not thread.is_alive()

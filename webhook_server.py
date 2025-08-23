@@ -4,29 +4,29 @@ import main_workflow
 
 app = FastAPI()
 
-# Flag to avoid running multiple workflows simultaneously
-_is_running = False
+# Thread en cours d'exécution pour le workflow
+_workflow_thread: threading.Thread | None = None
 _lock = threading.Lock()
 
 
 def _run_workflow() -> None:
-    global _is_running
+    global _workflow_thread
     try:
         main_workflow.main()
     finally:
         with _lock:
-            _is_running = False
+            _workflow_thread = None
 
 
 @app.post("/webhook")
 async def trigger_workflow(request: Request) -> dict:
-    # Telegram sends JSON updates. We ignore contents and just trigger workflow.
-    await request.json()  # read body to consume the request
-    global _is_running
+    # Telegram envoie des mises à jour en JSON ; leur contenu est ignoré.
+    await request.json()  # consommer le corps de la requête
+    global _workflow_thread
     with _lock:
-        if not _is_running:
-            _is_running = True
-            threading.Thread(target=_run_workflow, daemon=True).start()
+        if not _workflow_thread or not _workflow_thread.is_alive():
+            _workflow_thread = threading.Thread(target=_run_workflow, daemon=True)
+            _workflow_thread.start()
     return {"ok": True}
 
 

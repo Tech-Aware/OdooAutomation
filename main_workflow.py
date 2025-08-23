@@ -54,6 +54,8 @@ def main() -> None:
             telegram_service.send_message("Fin du programme.")
             break
 
+    telegram_service.stop()
+
 
 if __name__ == "__main__":
     main()
