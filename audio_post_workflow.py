@@ -42,7 +42,13 @@ def run_workflow(
         while True:
             action = telegram_service.send_message_with_buttons(
                 last_post,
-                ["Modifier", "Illustrer", "Publier", "Programmer", "Terminer"],
+                [
+                    "Modifier",
+                    "Illustrer",
+                    "Publier",
+                    "Programmer",
+                    "Retour au menu principal",
+                ],
             )
 
             if action == "Modifier":
@@ -108,11 +114,12 @@ def run_workflow(
                 )
                 logger.info("Post généré avec succès.")
                 final_action = telegram_service.send_message_with_buttons(
-                    "Publication effectuée.", ["Recommencer", "Terminer"]
+                    "Publication effectuée.",
+                    ["Recommencer", "Retour au menu principal"],
                 )
                 if final_action == "Recommencer":
                     return
-                telegram_service.send_message("Fin du processus.")
+                telegram_service.send_message("Retour au menu principal.")
                 return
 
             if action == "Programmer":
@@ -127,15 +134,16 @@ def run_workflow(
                 )
                 logger.info("Publication programmée avec succès.")
                 final_action = telegram_service.send_message_with_buttons(
-                    "Publication planifiée.", ["Recommencer", "Terminer"]
+                    "Publication planifiée.",
+                    ["Recommencer", "Retour au menu principal"],
                 )
                 if final_action == "Recommencer":
                     return
-                telegram_service.send_message("Fin du processus.")
+                telegram_service.send_message("Retour au menu principal.")
                 return
 
-            if action == "Terminer":
-                telegram_service.send_message("Fin du processus.")
+            if action == "Retour au menu principal":
+                telegram_service.send_message("Retour au menu principal.")
                 return
     except Exception as err:  # pragma: no cover - log then continue
         logger.exception(f"Erreur lors du traitement : {err}")

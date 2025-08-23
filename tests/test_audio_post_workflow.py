@@ -33,7 +33,7 @@ class DummyTelegramService:
     def __init__(self, logger, openai_service):
         self.logger = logger
         self.openai_service = openai_service
-        self.messages = ["/continuer", "transcribed", "/publier", "/terminer"]
+        self.messages = ["/continuer", "transcribed", "/publier", "/retour"]
         self.index = 0
 
     def start(self):
@@ -77,7 +77,7 @@ class EditingDummyTelegramService(DummyTelegramService):
             "/modifier",
             "modif",
             "/publier",
-            "/terminer",
+            "/retour",
         ]
 
 
@@ -113,7 +113,7 @@ class IllustrationDummyTelegramService(DummyTelegramService):
             "/illustrer",
             "/generer",
             "/publier",
-            "/terminer",
+            "/retour",
         ]
 
     def ask_options(self, prompt, options):
@@ -153,7 +153,7 @@ class SchedulingDummyTelegramService(DummyTelegramService):
             "/continuer",
             "transcribed",
             "/programmer",
-            "/terminer",
+            "/retour",
         ]
 
 
@@ -245,7 +245,7 @@ class AttachDummyTelegramService(DummyTelegramService):
             "/illustrer",
             "/joindre",
             "/publier",
-            "/terminer",
+            "/retour",
         ]
 
     def ask_user_images(self):
