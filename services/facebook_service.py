@@ -88,9 +88,13 @@ class FacebookService:
         """Planifie la publication d'un post sur la page principale."""
         files, fh = self._prepare_files(image)
         if publish_time.tzinfo is None:
-            publish_time = publish_time.replace(tzinfo=timezone.utc)
-        else:
-            publish_time = publish_time.astimezone(timezone.utc)
+            # Sans fuseau, interpréter la date comme locale. En supposant UTC,
+            # un post programmé risquait d'être planifié dans le passé et
+            # donc publié immédiatement.
+            publish_time = publish_time.replace(
+                tzinfo=datetime.now().astimezone().tzinfo
+            )
+        publish_time = publish_time.astimezone(timezone.utc)
         timestamp = int(publish_time.timestamp())
 
         if files:
