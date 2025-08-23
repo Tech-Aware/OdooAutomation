@@ -60,7 +60,7 @@ def run_workflow(
             preview = f"{subject}\n\n{preview_body}" if subject else preview_body
             action = telegram_service.send_message_with_buttons(
                 preview,
-                ["Modifier", "Liens", "Programmer", "Terminer"],
+                ["Modifier", "Liens", "Programmer", "Retour au menu principal"],
             )
 
             if action == "Modifier":
@@ -111,15 +111,16 @@ def run_workflow(
                         f"Erreur lors de la programmation : {err}"
                     )
                 final_action = telegram_service.send_message_with_buttons(
-                    "Que souhaitez-vous faire ?", ["Recommencer", "Terminer"]
+                    "Que souhaitez-vous faire ?",
+                    ["Recommencer", "Retour au menu principal"],
                 )
-                if final_action == "Terminer":
-                    telegram_service.send_message("Fin du workflow email.")
+                if final_action == "Retour au menu principal":
+                    telegram_service.send_message("Retour au menu principal.")
                     return
                 return
 
-            if action == "Terminer":
-                telegram_service.send_message("Fin du workflow email.")
+            if action == "Retour au menu principal":
+                telegram_service.send_message("Retour au menu principal.")
                 return
     except Exception as err:  # pragma: no cover - log then continue
         logger.exception(f"Erreur lors du traitement : {err}")

@@ -27,7 +27,7 @@ class DummyTelegramService:
     def __init__(self, logger, openai_service):
         self.logger = logger
         self.openai_service = openai_service
-        self.messages = ["/continuer", "contenu", "/programmer", "/terminer"]
+        self.messages = ["/continuer", "contenu", "/programmer", "/retour"]
         self.index = 0
         self.buttons_calls = []
         self.sent_messages = []
@@ -87,5 +87,5 @@ def test_final_options(monkeypatch):
     workflow_main()
 
     tg = DummyTelegramService.instance
-    assert ["Recommencer", "Terminer"] in tg.buttons_calls
-    assert "Fin du workflow email." in tg.sent_messages
+    assert ["Recommencer", "Retour au menu principal"] in tg.buttons_calls
+    assert "Retour au menu principal." in tg.sent_messages
