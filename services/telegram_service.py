@@ -127,31 +127,36 @@ class TelegramService:
         data = await file.download_as_bytearray()
         self._photo_future.set_result(BytesIO(data))
 
-    async def _wait_photo(self) -> BytesIO:
+    async def _wait_photo(self, timeout: float | None = None) -> BytesIO:
         assert self.loop is not None
         self._photo_future = self.loop.create_future()
-        return await self._photo_future
+        return await asyncio.wait_for(self._photo_future, timeout)
 
     @log_execution
-    def ask_photo(self, prompt: str) -> BytesIO:
+    def ask_photo(self, prompt: str, timeout: float | None = None) -> BytesIO:
         if not self.loop:
             raise RuntimeError("Le bot Telegram n'est pas démarré")
         self.send_message(prompt)
-        return asyncio.run_coroutine_threadsafe(self._wait_photo(), self.loop).result()
+        try:
+            return asyncio.run_coroutine_threadsafe(
+                self._wait_photo(timeout), self.loop
+            ).result()
+        except asyncio.TimeoutError as err:
+            raise TimeoutError from err
 
     @log_execution
-    def ask_user_images(self) -> List[BytesIO]:
+    def ask_user_images(self, timeout: float | None = None) -> List[BytesIO]:
         images: List[BytesIO] = []
         while True:
-            images.append(self.ask_photo("Envoyez une image"))
-            if not self.ask_yes_no("Ajouter une autre image ?"):
+            images.append(self.ask_photo("Envoyez une image", timeout=timeout))
+            if not self.ask_yes_no("Ajouter une autre image ?", timeout=timeout):
                 break
         return images
 
     # ------------------------------------------------------------------
     # Attente d'un message texte ou vocal
     # ------------------------------------------------------------------
-    async def _wait_message(self) -> str:
+    async def _wait_message(self, timeout: float | None = None) -> str:
         """Attend la première entrée reçue, texte ou vocale."""
         assert self.loop is not None
         self._voice_future = self.loop.create_future()
@@ -159,19 +164,27 @@ class TelegramService:
         done, pending = await asyncio.wait(
             [self._voice_future, self._text_future],
             return_when=asyncio.FIRST_COMPLETED,
+            timeout=timeout,
         )
+        if not done:
+            for fut in pending:
+                fut.cancel()
+            raise asyncio.TimeoutError
         result = next(iter(done)).result()
         for fut in pending:
             fut.cancel()
         return result
 
     @log_execution
-    def wait_for_message(self) -> str:
+    def wait_for_message(self, timeout: float | None = None) -> str:
         if not self.loop:
             raise RuntimeError("Le bot Telegram n'est pas démarré")
-        return asyncio.run_coroutine_threadsafe(
-            self._wait_message(), self.loop
-        ).result()
+        try:
+            return asyncio.run_coroutine_threadsafe(
+                self._wait_message(timeout), self.loop
+            ).result()
+        except asyncio.TimeoutError as err:
+            raise TimeoutError from err
 
     # ------------------------------------------------------------------
     # Gestion des messages textes
@@ -184,12 +197,17 @@ class TelegramService:
         self._text_future.set_result(update.message.text)
     
     @log_execution
-    def ask_text(self, prompt: str) -> str:
+    def ask_text(self, prompt: str, timeout: float | None = None) -> str:
         """Envoie ``prompt`` et attend une réponse texte ou vocale."""
         if not self.loop:
             raise RuntimeError("Le bot Telegram n'est pas démarré")
         self.send_message(prompt)
-        return asyncio.run_coroutine_threadsafe(self._wait_message(), self.loop).result()
+        try:
+            return asyncio.run_coroutine_threadsafe(
+                self._wait_message(timeout), self.loop
+            ).result()
+        except asyncio.TimeoutError as err:
+            raise TimeoutError from err
     
     # ------------------------------------------------------------------
     # Questions avec boutons
@@ -202,7 +220,9 @@ class TelegramService:
         await update.callback_query.answer()
         await update.callback_query.edit_message_reply_markup(None)
 
-    async def _ask(self, prompt: str, options: List[str]) -> str:
+    async def _ask(
+        self, prompt: str, options: List[str], timeout: float | None = None
+    ) -> str:
         """Affiche les options numérotées puis propose un clavier de choix."""
         assert self.loop is not None
         self._callback_future = self.loop.create_future()
@@ -233,30 +253,37 @@ class TelegramService:
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
 
-        answer_key = await self._callback_future
+        answer_key = await asyncio.wait_for(self._callback_future, timeout)
         return mapping[answer_key]
 
     @log_execution
-    def ask_options(self, prompt: str, options: List[str]) -> str:
+    def ask_options(
+        self, prompt: str, options: List[str], timeout: float | None = None
+    ) -> str:
         if not self.loop:
             raise RuntimeError("Le bot Telegram n'est pas démarré")
-        return asyncio.run_coroutine_threadsafe(
-            self._ask(prompt, options), self.loop
-        ).result()
+        try:
+            return asyncio.run_coroutine_threadsafe(
+                self._ask(prompt, options, timeout), self.loop
+            ).result()
+        except asyncio.TimeoutError as err:
+            raise TimeoutError from err
 
     @log_execution
-    def ask_yes_no(self, prompt: str) -> bool:
-        response = self.ask_options(prompt, ["Oui", "Non"])
+    def ask_yes_no(self, prompt: str, timeout: float | None = None) -> bool:
+        response = self.ask_options(prompt, ["Oui", "Non"], timeout=timeout)
         return response == "Oui"
 
     @log_execution
-    def ask_list(self, prompt: str, options: List[str]) -> List[str]:
+    def ask_list(
+        self, prompt: str, options: List[str], timeout: float | None = None
+    ) -> List[str]:
         """Permet de sélectionner plusieurs éléments dans ``options``."""
         selected: List[str] = []
         available = list(options)
         while available:
             choice = self.ask_options(
-                f"{prompt} ou Terminer", available + ["Terminer"]
+                f"{prompt} ou Terminer", available + ["Terminer"], timeout=timeout
             )
             if choice == "Terminer":
                 break
@@ -264,7 +291,9 @@ class TelegramService:
             available.remove(choice)
         return selected
 
-    async def _ask_images(self, prompt: str, images: List[BytesIO]) -> BytesIO:
+    async def _ask_images(
+        self, prompt: str, images: List[BytesIO], timeout: float | None = None
+    ) -> BytesIO:
         """Affiche des images avec un bouton de choix et renvoie l'image choisie."""
         assert self.loop is not None
         self._callback_future = self.loop.create_future()
@@ -282,19 +311,26 @@ class TelegramService:
                 photo=InputFile(img, filename=f"illustration_{i}.png"),
                 reply_markup=keyboard,
             )
-        answer_key = await self._callback_future
+        answer_key = await asyncio.wait_for(self._callback_future, timeout)
         return mapping[answer_key]
 
     @log_execution
-    def ask_image(self, prompt: str, images: List[BytesIO]) -> BytesIO:
+    def ask_image(
+        self, prompt: str, images: List[BytesIO], timeout: float | None = None
+    ) -> BytesIO:
         """Demande à l'utilisateur de choisir une image parmi celles fournies."""
         if not self.loop:
             raise RuntimeError("Le bot Telegram n'est pas démarré")
-        return asyncio.run_coroutine_threadsafe(
-            self._ask_images(prompt, images), self.loop
-        ).result()
+        try:
+            return asyncio.run_coroutine_threadsafe(
+                self._ask_images(prompt, images, timeout), self.loop
+            ).result()
+        except asyncio.TimeoutError as err:
+            raise TimeoutError from err
 
-    async def _send_with_buttons(self, text: str, options: List[str]) -> str:
+    async def _send_with_buttons(
+        self, text: str, options: List[str], timeout: float | None = None
+    ) -> str:
         """Envoie ``text`` avec des boutons inline et retourne le choix."""
         assert self.loop is not None
         self._callback_future = self.loop.create_future()
@@ -308,14 +344,19 @@ class TelegramService:
             text=text,
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
-        answer_key = await self._callback_future
+        answer_key = await asyncio.wait_for(self._callback_future, timeout)
         return mapping[answer_key]
 
     @log_execution
-    def send_message_with_buttons(self, text: str, options: List[str]) -> str:
+    def send_message_with_buttons(
+        self, text: str, options: List[str], timeout: float | None = None
+    ) -> str:
         """Envoie un message et attend le choix d'un bouton parmi ``options``."""
         if not self.loop:
             raise RuntimeError("Le bot Telegram n'est pas démarré")
-        return asyncio.run_coroutine_threadsafe(
-            self._send_with_buttons(text, options), self.loop
-        ).result()
+        try:
+            return asyncio.run_coroutine_threadsafe(
+                self._send_with_buttons(text, options, timeout), self.loop
+            ).result()
+        except asyncio.TimeoutError as err:
+            raise TimeoutError from err
