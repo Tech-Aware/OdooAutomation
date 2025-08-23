@@ -44,11 +44,12 @@ ODOO_USER=<utilisateur>
 ODOO_PASSWORD=<mot de passe>
 TELEGRAM_BOT_TOKEN=<token du bot Telegram>
 TELEGRAM_USER_ID=<identifiant Telegram du destinataire>
+TELEGRAM_WEBHOOK_URL=<URL du webhook Telegram>
 FACEBOOK_PAGE_ID=<id de votre page Facebook>
 PAGE_ACCESS_TOKEN=<token de la page Facebook>
 ```
 
-Ces variables permettent de se connecter à Odoo, à l'API OpenAI, à Facebook et à Telegram pour l'envoi de notifications. `TELEGRAM_BOT_TOKEN` et `TELEGRAM_USER_ID` sont utilisés par `services/telegram_service.py` pour envoyer des messages, tandis que `FACEBOOK_PAGE_ID` et `PAGE_ACCESS_TOKEN` servent aux modules de publication Facebook.
+Ces variables permettent de se connecter à Odoo, à l'API OpenAI, à Facebook et à Telegram pour l'envoi de notifications. `TELEGRAM_BOT_TOKEN`, `TELEGRAM_USER_ID` et `TELEGRAM_WEBHOOK_URL` sont utilisés par `services/telegram_service.py` pour envoyer des messages et réactiver le webhook, tandis que `FACEBOOK_PAGE_ID` et `PAGE_ACCESS_TOKEN` servent aux modules de publication Facebook.
 
 ## Services principaux
 

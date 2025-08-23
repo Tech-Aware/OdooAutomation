@@ -146,13 +146,22 @@ def main() -> None:
     telegram_service = TelegramService(logger, openai_service)
     telegram_service.start()
     try:
-        email_service = OdooEmailService(logger)
-    except RuntimeError as err:
-        logger.exception(f"Initialisation du service Odoo échouée : {err}")
-        telegram_service.send_message(str(err))
-        return
+        try:
+            email_service = OdooEmailService(logger)
+        except RuntimeError as err:
+            logger.exception(
+                f"Initialisation du service Odoo échouée : {err}"
+            )
+            telegram_service.send_message(str(err))
+            return
 
-    run_workflow(logger, telegram_service, openai_service, email_service)
+        run_workflow(
+            logger, telegram_service, openai_service, email_service
+        )
+    except KeyboardInterrupt:
+        logger.info("Arrêt manuel du programme")
+    finally:
+        telegram_service.stop()
 
 
 if __name__ == "__main__":

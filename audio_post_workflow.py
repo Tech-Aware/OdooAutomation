@@ -176,13 +176,22 @@ def main() -> None:
     telegram_service = TelegramService(logger, openai_service)
     telegram_service.start()
     try:
-        facebook_service = FacebookService(logger)
-    except RuntimeError as err:
-        logger.exception(f"Initialisation du service Facebook échouée : {err}")
-        telegram_service.send_message(str(err))
-        return
+        try:
+            facebook_service = FacebookService(logger)
+        except RuntimeError as err:
+            logger.exception(
+                f"Initialisation du service Facebook échouée : {err}"
+            )
+            telegram_service.send_message(str(err))
+            return
 
-    run_workflow(logger, telegram_service, openai_service, facebook_service)
+        run_workflow(
+            logger, telegram_service, openai_service, facebook_service
+        )
+    except KeyboardInterrupt:
+        logger.info("Arrêt manuel du programme")
+    finally:
+        telegram_service.stop()
 
 
 if __name__ == "__main__":
