@@ -21,21 +21,24 @@ def run_workflow(
     facebook_service: "FacebookService",
 ) -> None:
     """Exécute le workflow de publication avec des services déjà initialisés."""
+    timeout = 300
 
     action = telegram_service.send_message_with_buttons(
         "Bienvenue dans le workflow de publication sur Facebook.",
         ["Continuer", "Retour"],
+        timeout=timeout,
     )
     if action == "Retour":
         return
 
-    text = telegram_service.ask_text(
-        "Envoyez le sujet de la publication via un message audio ou un message texte !",
-    )
-    if not text:
-        return
-
     try:
+        text = telegram_service.ask_text(
+            "Envoyez le sujet de la publication via un message audio ou un message texte !",
+            timeout=timeout,
+        )
+        if not text:
+            return
+
         last_post = openai_service.generate_event_post(text)
         selected_image_paths: list[str] = []
 
@@ -49,11 +52,13 @@ def run_workflow(
                     "Programmer",
                     "Retour au menu principal",
                 ],
+                timeout=timeout,
             )
 
             if action == "Modifier":
                 corrections = telegram_service.ask_text(
                     "Partagez vos modifications s'il vous plaît !",
+                    timeout=timeout,
                 )
                 last_post = openai_service.apply_corrections(last_post, corrections)
                 continue
@@ -62,6 +67,7 @@ def run_workflow(
                 choice = telegram_service.send_message_with_buttons(
                     "Comment souhaitez-vous illustrer ?",
                     ["Générer", "Joindre", "Retour"],
+                    timeout=timeout,
                 )
                 if choice == "Générer":
                     styles = [
@@ -79,14 +85,14 @@ def run_workflow(
                         "Fantaisie",
                     ]
                     style = telegram_service.ask_options(
-                        "Choisissez un style d'illustration", styles
+                        "Choisissez un style d'illustration", styles, timeout=timeout
                     )
                     illustrations = openai_service.generate_illustrations(
                         last_post, style
                     )
                     if illustrations:
                         chosen_image = telegram_service.ask_image(
-                            "Choisissez une illustration", illustrations
+                            "Choisissez une illustration", illustrations, timeout=timeout
                         )
                         if chosen_image:
                             chosen_image.seek(0)
@@ -96,7 +102,7 @@ def run_workflow(
                             selected_image_paths = [path]
                     continue
                 if choice == "Joindre":
-                    images = telegram_service.ask_user_images()
+                    images = telegram_service.ask_user_images(timeout=timeout)
                     start = len(selected_image_paths)
                     for idx, img in enumerate(images):
                         img.seek(0)
@@ -116,6 +122,7 @@ def run_workflow(
                 final_action = telegram_service.send_message_with_buttons(
                     "Publication effectuée.",
                     ["Recommencer", "Retour au menu principal"],
+                    timeout=timeout,
                 )
                 if final_action == "Recommencer":
                     return
@@ -136,6 +143,7 @@ def run_workflow(
                 final_action = telegram_service.send_message_with_buttons(
                     "Publication planifiée.",
                     ["Recommencer", "Retour au menu principal"],
+                    timeout=timeout,
                 )
                 if final_action == "Recommencer":
                     return
@@ -145,6 +153,11 @@ def run_workflow(
             if action == "Retour au menu principal":
                 telegram_service.send_message("Retour au menu principal.")
                 return
+    except TimeoutError:
+        telegram_service.send_message(
+            "Inactivité prolongée, retour au menu principal."
+        )
+        return
     except Exception as err:  # pragma: no cover - log then continue
         logger.exception(f"Erreur lors du traitement : {err}")
 

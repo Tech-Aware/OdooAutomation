@@ -44,7 +44,7 @@ class DummyTelegramService:
         self.index += 1
         return msg
 
-    def send_message_with_buttons(self, text, options):
+    def send_message_with_buttons(self, text, options, timeout=None):
         self.buttons_calls.append(options)
         msg = self.wait_for_message()
         cmd = msg.lstrip("/").lower()
@@ -53,7 +53,7 @@ class DummyTelegramService:
                 return opt
         return options[0]
 
-    def ask_text(self, prompt):
+    def ask_text(self, prompt, timeout=None):
         return self.wait_for_message()
 
 

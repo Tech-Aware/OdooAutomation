@@ -47,7 +47,7 @@ class DummyTelegramService:
         self.index += 1
         return msg
 
-    def send_message_with_buttons(self, text, options):
+    def send_message_with_buttons(self, text, options, timeout=None):
         msg = self.wait_for_message()
         cmd = msg.lstrip("/").lower()
         for opt in options:
@@ -55,16 +55,16 @@ class DummyTelegramService:
                 return opt
         return options[0]
 
-    def ask_options(self, prompt, options):
-        return self.send_message_with_buttons(prompt, options)
+    def ask_options(self, prompt, options, timeout=None):
+        return self.send_message_with_buttons(prompt, options, timeout=timeout)
 
-    def ask_yes_no(self, prompt):
+    def ask_yes_no(self, prompt, timeout=None):
         return False
 
-    def ask_user_images(self):
+    def ask_user_images(self, timeout=None):
         return []
 
-    def ask_text(self, prompt):
+    def ask_text(self, prompt, timeout=None):
         return self.wait_for_message()
 
 
@@ -116,13 +116,13 @@ class IllustrationDummyTelegramService(DummyTelegramService):
             "/retour",
         ]
 
-    def ask_options(self, prompt, options):
+    def ask_options(self, prompt, options, timeout=None):
         assert "style" in prompt.lower()
         assert "Manga" in options
         assert len(options) > 3
         return "Réaliste"
 
-    def ask_image(self, prompt, images):
+    def ask_image(self, prompt, images, timeout=None):
         return images[0]
 
 
@@ -248,7 +248,7 @@ class AttachDummyTelegramService(DummyTelegramService):
             "/retour",
         ]
 
-    def ask_user_images(self):
+    def ask_user_images(self, timeout=None):
         return [BytesIO(b"a"), BytesIO(b"b")]
 
 
