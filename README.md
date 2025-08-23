@@ -12,6 +12,7 @@ Ce dépôt contient des scripts d'automatisation autour d'Odoo. On y génère de
 - **facebook_post/** : accès plus bas niveau à l'API Graph pour publier et partager des posts existants.
 - **audio_post_workflow.py** : workflow interactif via Telegram pour générer et publier un post Facebook à partir d'un message vocal ou texte.
 - **odoo_email_workflow.py** : workflow interactif créant un email marketing et le programmant dans Odoo.
+- **main_workflow.py** : point d'entrée principal offrant via Telegram un menu pour lancer les workflows de publication Facebook ou d'email marketing.
 
 ## Dépendances
 
@@ -21,6 +22,8 @@ Le projet s'appuie sur les bibliothèques suivantes (voir `requirements.txt`) :
 python-dotenv
 openai
 python-telegram-bot
+requests
+tzdata
 ```
 
 Installez-les avec :
@@ -57,6 +60,11 @@ Ces variables permettent de se connecter à Odoo, à l'API OpenAI, à Facebook e
 
 ## Utilisation principale
 
+- Utiliser le point d'entrée principal pour tout orchestrer :
+  ```bash
+  python main_workflow.py
+  ```
+  Le bot Telegram propose alors un menu pour publier sur Facebook ou composer un email marketing.
 - Générer un post statique : exécuter un des scripts de `generate_post/`.
   ```bash
   python generate_post/generate_facebook_post.py
