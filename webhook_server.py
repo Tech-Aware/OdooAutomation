@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 import threading
 import main_workflow
+import time
 
 app = FastAPI()
 
@@ -14,6 +15,8 @@ def _run_workflow() -> None:
     try:
         main_workflow.main()
     finally:
+        # Delay cleanup slightly so the thread reference remains accessible
+        time.sleep(0.1)
         with _lock:
             _workflow_thread = None
 

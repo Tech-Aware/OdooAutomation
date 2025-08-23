@@ -18,43 +18,48 @@ def main() -> None:
     telegram_service = TelegramService(logger, openai_service)
     telegram_service.start()
 
-    while True:
-        action = telegram_service.send_message_with_buttons(
-            "Que souhaitez-vous faire ?",
-            ["Publier sur Facebook", "Mass Mailing", "Quitter"],
-        )
+    try:
+        while True:
+            action = telegram_service.send_message_with_buttons(
+                "Que souhaitez-vous faire ?",
+                ["Publier sur Facebook", "Mass Mailing", "Quitter"],
+            )
 
-        if action == "Publier sur Facebook":
-            try:
-                facebook_service = FacebookService(logger)
-            except RuntimeError as err:
-                logger.exception(
-                    f"Initialisation du service Facebook échouée : {err}"
+            if action == "Publier sur Facebook":
+                try:
+                    facebook_service = FacebookService(logger)
+                except RuntimeError as err:
+                    logger.exception(
+                        f"Initialisation du service Facebook échouée : {err}"
+                    )
+                    telegram_service.send_message(str(err))
+                    continue
+                run_audio_workflow(
+                    logger, telegram_service, openai_service, facebook_service
                 )
-                telegram_service.send_message(str(err))
                 continue
-            run_audio_workflow(
-                logger, telegram_service, openai_service, facebook_service
-            )
-            continue
 
-        if action == "Mass Mailing":
-            try:
-                email_service = OdooEmailService(logger)
-            except RuntimeError as err:
-                logger.exception(f"Initialisation du service Odoo échouée : {err}")
-                telegram_service.send_message(str(err))
+            if action == "Mass Mailing":
+                try:
+                    email_service = OdooEmailService(logger)
+                except RuntimeError as err:
+                    logger.exception(
+                        f"Initialisation du service Odoo échouée : {err}"
+                    )
+                    telegram_service.send_message(str(err))
+                    continue
+                run_email_workflow(
+                    logger, telegram_service, openai_service, email_service
+                )
                 continue
-            run_email_workflow(
-                logger, telegram_service, openai_service, email_service
-            )
-            continue
 
-        if action == "Quitter":
-            telegram_service.send_message("Fin du programme.")
-            break
-
-    telegram_service.stop()
+            if action == "Quitter":
+                telegram_service.send_message("Fin du programme.")
+                break
+    except KeyboardInterrupt:
+        logger.info("Arrêt manuel du programme")
+    finally:
+        telegram_service.stop()
 
 
 if __name__ == "__main__":
