@@ -22,12 +22,16 @@ def run_workflow(
 ) -> None:
     """Exécute le workflow de publication avec des services déjà initialisés."""
 
-    telegram_service.send_message(
-        "Bienvenue dans le workflow de publication sur Facebook. "
-        "Envoyez le sujet de la publication via un message audio ou un message texte !"
+    action = telegram_service.send_message_with_buttons(
+        "Bienvenue dans le workflow de publication sur Facebook.",
+        ["Continuer", "Retour"],
     )
+    if action == "Retour":
+        return
 
-    text = telegram_service.wait_for_message()
+    text = telegram_service.ask_text(
+        "Envoyez le sujet de la publication via un message audio ou un message texte !",
+    )
     if not text:
         return
 

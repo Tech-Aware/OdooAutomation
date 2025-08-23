@@ -33,7 +33,7 @@ class DummyTelegramService:
     def __init__(self, logger, openai_service):
         self.logger = logger
         self.openai_service = openai_service
-        self.messages = ["transcribed", "/publier", "/terminer"]
+        self.messages = ["/continuer", "transcribed", "/publier", "/terminer"]
         self.index = 0
 
     def start(self):
@@ -64,14 +64,21 @@ class DummyTelegramService:
     def ask_user_images(self):
         return []
 
+    def ask_text(self, prompt):
+        return self.wait_for_message()
+
 
 class EditingDummyTelegramService(DummyTelegramService):
     def __init__(self, logger, openai_service):
         super().__init__(logger, openai_service)
-        self.messages = ["transcribed", "/modifier", "/publier", "/terminer"]
-
-    def ask_text(self, prompt):
-        return "modif"
+        self.messages = [
+            "/continuer",
+            "transcribed",
+            "/modifier",
+            "modif",
+            "/publier",
+            "/terminer",
+        ]
 
 
 class DummyFacebookService:
@@ -101,6 +108,7 @@ class IllustrationDummyTelegramService(DummyTelegramService):
     def __init__(self, logger, openai_service):
         super().__init__(logger, openai_service)
         self.messages = [
+            "/continuer",
             "transcribed",
             "/illustrer",
             "/generer",
@@ -141,7 +149,12 @@ def test_main_flow(monkeypatch):
 class SchedulingDummyTelegramService(DummyTelegramService):
     def __init__(self, logger, openai_service):
         super().__init__(logger, openai_service)
-        self.messages = ["transcribed", "/programmer", "/terminer"]
+        self.messages = [
+            "/continuer",
+            "transcribed",
+            "/programmer",
+            "/terminer",
+        ]
 
 
 def test_scheduling_flow(monkeypatch):
@@ -227,6 +240,7 @@ class AttachDummyTelegramService(DummyTelegramService):
     def __init__(self, logger, openai_service):
         super().__init__(logger, openai_service)
         self.messages = [
+            "/continuer",
             "transcribed",
             "/illustrer",
             "/joindre",
