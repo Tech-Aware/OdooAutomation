@@ -132,38 +132,3 @@ class FacebookService:
             if fh:
                 fh.close()
 
-    @log_execution
-    def cross_post_to_groups(
-        self,
-        message: str,
-        groups: List[str],
-        image: Union[str, BytesIO, List[Union[str, BytesIO]], None] = None,
-    ) -> List[str]:
-        """Diffuse le message dans les groupes donnés et retourne les IDs de réponse."""
-        response_ids: List[str] = []
-        for group in groups:
-            files, fh = self._prepare_files(image)
-            if files:
-                url = f"https://graph.facebook.com/{group}/photos"
-                data = {"caption": message, "access_token": self.page_token}
-
-            else:
-                url = f"https://graph.facebook.com/{group}/feed"
-                data = {"message": message, "access_token": self.page_token}
-            try:
-                response = requests.post(url, data=data, files=files, timeout=10)
-                response.raise_for_status()
-                response_ids.append(response.json().get("id"))
-                self.logger.info(
-                    f"Réponse du groupe {group}: {response.text}"
-                )
-            except Exception as e:
-                self.logger.exception(
-                    f"Erreur lors de la publication dans le groupe {group} : {e}"
-                )
-                raise
-            finally:
-                if fh:
-                    fh.close()
-        return response_ids
-

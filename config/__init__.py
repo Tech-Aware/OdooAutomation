@@ -7,7 +7,6 @@ and documented here for clarity.
 
 import os
 from dotenv import load_dotenv
-from .group_data_loader import load_group_data
 from config.log_config import setup_logger
 
 # Load variables from the .env file once

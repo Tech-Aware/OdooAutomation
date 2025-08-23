@@ -107,11 +107,6 @@ def main() -> None:
                     facebook_service.post_to_facebook_page(
                         last_post, selected_image_paths or None
                     )
-                    groups = telegram_service.ask_groups()
-                    if groups:
-                        facebook_service.cross_post_to_groups(
-                            last_post, groups, selected_image_paths or None
-                        )
                     logger.info("Post généré avec succès.")
                     final_action = telegram_service.send_message_with_buttons(
                         "Publication effectuée.", ["Recommencer", "Terminer"]
