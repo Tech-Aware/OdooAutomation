@@ -21,7 +21,7 @@ class DummyOpenAIService:
         assert text == "transcribed"
         return "post"
 
-    def generate_illustrations(self, prompt, style):
+    def generate_illustrations(self, prompt, style, text=None, event_date=None):
         return []
 
     def apply_corrections(self, text, corrections):
@@ -109,8 +109,8 @@ class IllustrationDummyOpenAIService(DummyOpenAIService):
         super().__init__(logger)
         self.called_with = None
 
-    def generate_illustrations(self, prompt, style):
-        self.called_with = (prompt, style)
+    def generate_illustrations(self, prompt, style, text=None, event_date=None):
+        self.called_with = (prompt, style, text, event_date)
         return [BytesIO(b"img")]
 
 
@@ -122,6 +122,7 @@ class IllustrationDummyTelegramService(DummyTelegramService):
             "transcribed",
             "/illustrer",
             "/generer",
+            "/valider",
             "/publier",
             "/retour",
         ]
@@ -242,7 +243,7 @@ def test_illustration_flow(monkeypatch, tmp_path):
 
     workflow_main()
 
-    assert openai_service.called_with == ("post", "Réaliste")
+    assert openai_service.called_with == ("post", "Réaliste", None, None)
     assert fb_service.posted == ("post", ["generated_image_0.png"])
 
 

@@ -83,38 +83,63 @@ def run_workflow(
                     timeout=timeout,
                 )
                 if choice == "Générer":
-                    styles = [
-                        "Réaliste",
-                        "Dessin animé",
-                        "Pixel art",
-                        "Manga",
-                        "Aquarelle",
-                        "Croquis",
-                        "Peinture à l'huile",
-                        "Low poly",
-                        "Cyberpunk",
-                        "Art déco",
-                        "Noir et blanc",
-                        "Fantaisie",
-                    ]
-                    style = telegram_service.ask_options(
-                        "Choisissez un style d'illustration", styles, timeout=timeout
-                    )
-                    illustrations = openai_service.generate_illustrations(
-                        last_post, style
-                    )
-                    if illustrations:
-                        chosen_image = telegram_service.ask_image(
-                            "Choisissez une illustration",
-                            illustrations,
+                    while True:
+                        styles = [
+                            "Réaliste",
+                            "Dessin animé",
+                            "Pixel art",
+                            "Manga",
+                            "Aquarelle",
+                            "Croquis",
+                            "Peinture à l'huile",
+                            "Low poly",
+                            "Cyberpunk",
+                            "Art déco",
+                            "Noir et blanc",
+                            "Fantaisie",
+                        ]
+                        style = telegram_service.ask_options(
+                            "Choisissez un style d'illustration", styles, timeout=timeout
+                        )
+                        add_text = telegram_service.ask_yes_no(
+                            "Souhaitez-vous ajouter du texte et une date?",
                             timeout=timeout,
                         )
-                        if chosen_image:
-                            chosen_image.seek(0)
-                            path = f"generated_image_{len(selected_image_paths)}.png"
-                            with open(path, "wb") as fh:
-                                fh.write(chosen_image.getvalue())
-                            selected_image_paths = [path]
+                        text = event_date = None
+                        if add_text:
+                            text = telegram_service.ask_text(
+                                "Quel texte souhaitez-vous afficher?", timeout=timeout
+                            )
+                            event_date = telegram_service.ask_text(
+                                "Indiquez la date (JJ/MM/AAAA)", timeout=timeout
+                            )
+                        illustrations = openai_service.generate_illustrations(
+                            last_post, style, text, event_date
+                        )
+                        if illustrations:
+                            chosen_image = telegram_service.ask_image(
+                                "Choisissez une illustration",
+                                illustrations,
+                                timeout=timeout,
+                            )
+                            if chosen_image:
+                                chosen_image.seek(0)
+                                path = f"generated_image_{len(selected_image_paths)}.png"
+                                with open(path, "wb") as fh:
+                                    fh.write(chosen_image.getvalue())
+                                decision = telegram_service.send_message_with_buttons(
+                                    "Que souhaitez-vous faire?",
+                                    ["Valider", "Regénérer", "Retour publication"],
+                                    timeout=timeout,
+                                )
+                                if decision == "Valider":
+                                    selected_image_paths = [path]
+                                    break
+                                if decision == "Regénérer":
+                                    continue
+                                if decision == "Retour publication":
+                                    break
+                        break
                     continue
                 if choice == "Joindre":
                     images = telegram_service.ask_user_images(timeout=timeout)
