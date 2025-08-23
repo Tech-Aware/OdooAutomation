@@ -36,15 +36,15 @@ def run_workflow(
     utc = ZoneInfo("UTC")
     timeout = 300
 
-    action = telegram_service.send_message_with_buttons(
-        "Bienvenue dans le workflow d'email marketing.",
-        ["Continuer", "Retour"],
-        timeout=timeout,
-    )
-    if action == "Retour":
-        return
-
     try:
+        action = telegram_service.send_message_with_buttons(
+            "Bienvenue dans le workflow d'email marketing.",
+            ["Continuer", "Retour"],
+            timeout=timeout,
+        )
+        if action == "Retour":
+            return
+
         text = telegram_service.ask_text(
             "Envoyez le sujet du mail via un message audio ou un message texte !",
             timeout=timeout,

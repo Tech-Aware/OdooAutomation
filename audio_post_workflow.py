@@ -23,11 +23,17 @@ def run_workflow(
     """Exécute le workflow de publication avec des services déjà initialisés."""
     timeout = 300
 
-    action = telegram_service.send_message_with_buttons(
-        "Bienvenue dans le workflow de publication sur Facebook.",
-        ["Continuer", "Retour"],
-        timeout=timeout,
-    )
+    try:
+        action = telegram_service.send_message_with_buttons(
+            "Bienvenue dans le workflow de publication sur Facebook.",
+            ["Continuer", "Retour"],
+            timeout=timeout,
+        )
+    except TimeoutError:
+        telegram_service.send_message(
+            "Inactivité prolongée, retour au menu principal."
+        )
+        return
     if action == "Retour":
         return
 
