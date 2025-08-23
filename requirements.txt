@@ -3,3 +3,5 @@ python-dotenv
 python-telegram-bot
 requests
 tzdata
+fastapi
+uvicorn
