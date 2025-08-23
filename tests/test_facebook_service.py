@@ -6,6 +6,7 @@ import unittest
 from io import BytesIO
 import importlib
 from datetime import datetime, timezone, timedelta
+import json
 
 
 def _server_proxy(url):
@@ -190,3 +191,38 @@ def test_schedule_post_naive_time_uses_local_timezone(
         .timestamp()
     )
     assert kwargs["data"]["scheduled_publish_time"] == expected_ts
+
+
+@patch.object(config, "FACEBOOK_PAGE_ID", "123")
+@patch.object(config, "PAGE_ACCESS_TOKEN", "token")
+@patch("builtins.open", new_callable=mock_open)
+@patch("services.facebook_service.requests.post")
+def test_schedule_post_with_image_uses_feed(mock_post, mock_file):
+    upload_response = Mock()
+    upload_response.raise_for_status = Mock()
+    upload_response.text = "upload"
+    upload_response.json.return_value = {"id": "42"}
+
+    schedule_response = Mock()
+    schedule_response.raise_for_status = Mock()
+    schedule_response.text = "scheduled"
+
+    mock_post.side_effect = [upload_response, schedule_response]
+
+    service = FacebookService(logger=logging.getLogger("test"))
+    publish_time = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
+    service.schedule_post_to_facebook_page("hello", publish_time, "img.jpg")
+
+    assert mock_post.call_count == 2
+
+    upload_call, schedule_call = mock_post.call_args_list
+
+    assert upload_call.args[0] == "https://graph.facebook.com/123/photos"
+    assert "files" in upload_call.kwargs
+
+    assert schedule_call.args[0] == "https://graph.facebook.com/123/feed"
+    data = schedule_call.kwargs["data"]
+    expected_ts = int(publish_time.timestamp())
+    assert data["scheduled_publish_time"] == expected_ts
+    assert json.loads(data["attached_media[0]"]) == {"media_fbid": "42"}
+    mock_file.return_value.close.assert_called_once()
