@@ -1,9 +1,38 @@
 import asyncio
 import threading
+import time
 from io import BytesIO
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from services.telegram_service import TelegramService
+
+
+@patch("services.telegram_service.Application")
+def test_start_deletes_webhook_before_polling(mock_app):
+    builder = MagicMock()
+    builder.token.return_value = builder
+    app = MagicMock()
+    app.add_handler = MagicMock()
+    app.initialize = AsyncMock()
+    app.start = AsyncMock()
+    app.bot.delete_webhook = AsyncMock()
+    app.updater.start_polling = AsyncMock()
+    app.updater.stop = AsyncMock()
+    app.stop = AsyncMock()
+    app.shutdown = AsyncMock()
+    builder.build.return_value = app
+    mock_app.builder.return_value = builder
+
+    service = TelegramService(MagicMock())
+    service.start()
+    while service.loop is None:
+        time.sleep(0.1)
+    time.sleep(0.1)
+
+    service.stop()
+
+    app.bot.delete_webhook.assert_awaited_once_with(drop_pending_updates=True)
+    app.updater.start_polling.assert_awaited_once()
 
 
 @patch("services.telegram_service.Application")

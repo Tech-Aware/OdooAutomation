@@ -67,6 +67,14 @@ class TelegramService:
             self.loop = asyncio.get_event_loop()
             self.loop.run_until_complete(self.app.initialize())
             self.loop.run_until_complete(self.app.start())
+            # Lorsque le bot a été configuré avec un webhook pour recevoir les
+            # mises à jour, ``get_updates`` (polling) renverra une erreur tant que
+            # ce webhook reste actif. On le supprime donc explicitement avant de
+            # démarrer le polling afin que les messages de l'utilisateur soient
+            # bien reçus durant le workflow interactif.
+            self.loop.run_until_complete(
+                self.app.bot.delete_webhook(drop_pending_updates=True)
+            )
             self.loop.run_until_complete(
                 self.app.updater.start_polling(drop_pending_updates=True)
             )
