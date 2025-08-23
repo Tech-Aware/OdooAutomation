@@ -5,7 +5,7 @@ un post à partir du contenu obtenu. Les interactions utilisateurs sont
 désormais réalisées via un véritable bot Telegram.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from services.facebook_service import FacebookService
 from services.openai_service import OpenAIService
@@ -170,7 +170,7 @@ def run_workflow(
                 return
 
             if action == "Programmer":
-                now = datetime.utcnow()
+                now = datetime.now(timezone.utc)
                 target = now.replace(hour=20, minute=0, second=0, microsecond=0)
                 if now >= target:
                     target = (now + timedelta(days=1)).replace(

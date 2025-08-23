@@ -1,6 +1,6 @@
 from typing import List, Union
 from io import BytesIO
-from datetime import datetime
+from datetime import datetime, timezone
 
 import config
 import requests
@@ -87,6 +87,10 @@ class FacebookService:
     ) -> dict | None:
         """Planifie la publication d'un post sur la page principale."""
         files, fh = self._prepare_files(image)
+        if publish_time.tzinfo is None:
+            publish_time = publish_time.replace(tzinfo=timezone.utc)
+        else:
+            publish_time = publish_time.astimezone(timezone.utc)
         timestamp = int(publish_time.timestamp())
 
         if files:

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 import audio_post_workflow
 from audio_post_workflow import main as workflow_main
@@ -191,6 +191,7 @@ def test_scheduling_flow(monkeypatch):
     assert fb_service.posted is None
     assert fb_service.scheduled[0] == "post"
     assert isinstance(fb_service.scheduled[1], datetime)
+    assert fb_service.scheduled[1].tzinfo is timezone.utc
 
 
 def test_modification_flow(monkeypatch):
