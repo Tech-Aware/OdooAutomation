@@ -94,9 +94,9 @@ class TelegramService:
         async def _stop() -> None:
             await self.app.updater.stop()
             await self.app.stop()
-            await self.app.shutdown()
             if config.TELEGRAM_WEBHOOK_URL:
                 await self.app.bot.set_webhook(url=config.TELEGRAM_WEBHOOK_URL)
+            await self.app.shutdown()
 
         asyncio.run_coroutine_threadsafe(_stop(), self.loop).result()
         self.loop.call_soon_threadsafe(self.loop.stop)
