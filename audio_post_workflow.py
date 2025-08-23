@@ -25,14 +25,20 @@ def run_workflow(
 
     try:
         action = telegram_service.send_message_with_buttons(
-            "Bienvenue dans le workflow de publication sur Facebook.",
+            (
+                "Bienvenue dans l'assistant de publication Facebook ! Il vous permet de :\n"
+                "- Générer une publication optimisée pour Facebook grâce à l'IA à partir de votre propre contenu.\n"
+                "- Apporter des modifications à la publication générée.\n"
+                "- Illustrer la publication dans un style qui vous convient grâce à l'IA ou joindre vos propres photos.\n"
+                "- Publier directement votre publication sur la page du comité ou la programmer (20h le soir si programmation avant 20h, sinon remis au lendemain matin 08h).\n"
+                "- Revenir au menu principal à tout moment.\n\n"
+                "Pour commencer, sélectionnez 'Continuer' puis fournissez votre contenu sous forme de texte ou d'audio."
+            ),
             ["Continuer", "Retour"],
             timeout=timeout,
         )
     except TimeoutError:
-        telegram_service.send_message(
-            "Inactivité prolongée, retour au menu principal."
-        )
+        telegram_service.send_message("Inactivité prolongée, retour au menu principal.")
         return
     if action == "Retour":
         return
@@ -98,7 +104,9 @@ def run_workflow(
                     )
                     if illustrations:
                         chosen_image = telegram_service.ask_image(
-                            "Choisissez une illustration", illustrations, timeout=timeout
+                            "Choisissez une illustration",
+                            illustrations,
+                            timeout=timeout,
                         )
                         if chosen_image:
                             chosen_image.seek(0)
@@ -160,9 +168,7 @@ def run_workflow(
                 telegram_service.send_message("Retour au menu principal.")
                 return
     except TimeoutError:
-        telegram_service.send_message(
-            "Inactivité prolongée, retour au menu principal."
-        )
+        telegram_service.send_message("Inactivité prolongée, retour au menu principal.")
         return
     except Exception as err:  # pragma: no cover - log then continue
         logger.exception(f"Erreur lors du traitement : {err}")
@@ -179,15 +185,11 @@ def main() -> None:
         try:
             facebook_service = FacebookService(logger)
         except RuntimeError as err:
-            logger.exception(
-                f"Initialisation du service Facebook échouée : {err}"
-            )
+            logger.exception(f"Initialisation du service Facebook échouée : {err}")
             telegram_service.send_message(str(err))
             return
 
-        run_workflow(
-            logger, telegram_service, openai_service, facebook_service
-        )
+        run_workflow(logger, telegram_service, openai_service, facebook_service)
     except KeyboardInterrupt:
         logger.info("Arrêt manuel du programme")
     finally:
@@ -196,4 +198,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
