@@ -34,7 +34,7 @@ def run_workflow(
         tz = ZoneInfo("UTC")
 
     utc = ZoneInfo("UTC")
-    timeout = 300
+    timeout = 600
 
     try:
         action = telegram_service.send_message_with_buttons(
@@ -139,8 +139,10 @@ def run_workflow(
                 telegram_service.send_message("Retour au menu principal.")
                 return
     except TimeoutError:
-        telegram_service.send_message("Inactivité prolongée, retour au menu principal.")
-        return
+        telegram_service.send_message(
+            "Inactivité prolongée, fermeture du programme."
+        )
+        raise SystemExit
     except Exception as err:  # pragma: no cover - log then continue
         logger.exception(f"Erreur lors du traitement : {err}")
 
