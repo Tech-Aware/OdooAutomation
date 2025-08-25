@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 import audio_post_workflow
 from audio_post_workflow import main as workflow_main
@@ -21,7 +21,7 @@ class DummyOpenAIService:
         assert text == "transcribed"
         return "post"
 
-    def generate_illustrations(self, prompt, style):
+    def generate_illustrations(self, prompt, style, text=None, event_date=None):
         return []
 
     def apply_corrections(self, text, corrections):
@@ -37,6 +37,9 @@ class DummyTelegramService:
         self.index = 0
 
     def start(self):
+        pass
+
+    def stop(self):
         pass
 
     def send_message(self, msg):
@@ -66,6 +69,13 @@ class DummyTelegramService:
 
     def ask_text(self, prompt, timeout=None):
         return self.wait_for_message()
+
+    def ask_text_or_return(self, prompt, timeout=None):
+        msg = self.wait_for_message()
+        cmd = msg.lstrip("/").lower()
+        if cmd.startswith("retour"):
+            return None
+        return msg
 
 
 class EditingDummyTelegramService(DummyTelegramService):
@@ -99,8 +109,8 @@ class IllustrationDummyOpenAIService(DummyOpenAIService):
         super().__init__(logger)
         self.called_with = None
 
-    def generate_illustrations(self, prompt, style):
-        self.called_with = (prompt, style)
+    def generate_illustrations(self, prompt, style, text=None, event_date=None):
+        self.called_with = (prompt, style, text, event_date)
         return [BytesIO(b"img")]
 
 
@@ -112,6 +122,7 @@ class IllustrationDummyTelegramService(DummyTelegramService):
             "transcribed",
             "/illustrer",
             "/generer",
+            "/valider",
             "/publier",
             "/retour",
         ]
@@ -180,6 +191,7 @@ def test_scheduling_flow(monkeypatch):
     assert fb_service.posted is None
     assert fb_service.scheduled[0] == "post"
     assert isinstance(fb_service.scheduled[1], datetime)
+    assert fb_service.scheduled[1].tzinfo is timezone.utc
 
 
 def test_modification_flow(monkeypatch):
@@ -232,7 +244,7 @@ def test_illustration_flow(monkeypatch, tmp_path):
 
     workflow_main()
 
-    assert openai_service.called_with == ("post", "Réaliste")
+    assert openai_service.called_with == ("post", "Réaliste", None, None)
     assert fb_service.posted == ("post", ["generated_image_0.png"])
 
 

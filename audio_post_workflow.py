@@ -5,7 +5,7 @@ un post à partir du contenu obtenu. Les interactions utilisateurs sont
 désormais réalisées via un véritable bot Telegram.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from services.facebook_service import FacebookService
 from services.openai_service import OpenAIService
@@ -21,7 +21,7 @@ def run_workflow(
     facebook_service: "FacebookService",
 ) -> None:
     """Exécute le workflow de publication avec des services déjà initialisés."""
-    timeout = 300
+    timeout = 600
 
     try:
         action = telegram_service.send_message_with_buttons(
@@ -38,17 +38,20 @@ def run_workflow(
             timeout=timeout,
         )
     except TimeoutError:
-        telegram_service.send_message("Inactivité prolongée, retour au menu principal.")
-        return
+        telegram_service.send_message(
+            "Inactivité prolongée, fermeture du programme."
+        )
+        raise SystemExit
     if action == "Retour":
         return
 
     try:
-        text = telegram_service.ask_text(
+        text = telegram_service.ask_text_or_return(
             "Envoyez le sujet de la publication via un message audio ou un message texte !",
             timeout=timeout,
         )
         if not text:
+            telegram_service.send_message("Retour au menu principal.")
             return
 
         last_post = openai_service.generate_event_post(text)
@@ -82,38 +85,63 @@ def run_workflow(
                     timeout=timeout,
                 )
                 if choice == "Générer":
-                    styles = [
-                        "Réaliste",
-                        "Dessin animé",
-                        "Pixel art",
-                        "Manga",
-                        "Aquarelle",
-                        "Croquis",
-                        "Peinture à l'huile",
-                        "Low poly",
-                        "Cyberpunk",
-                        "Art déco",
-                        "Noir et blanc",
-                        "Fantaisie",
-                    ]
-                    style = telegram_service.ask_options(
-                        "Choisissez un style d'illustration", styles, timeout=timeout
-                    )
-                    illustrations = openai_service.generate_illustrations(
-                        last_post, style
-                    )
-                    if illustrations:
-                        chosen_image = telegram_service.ask_image(
-                            "Choisissez une illustration",
-                            illustrations,
+                    while True:
+                        styles = [
+                            "Réaliste",
+                            "Dessin animé",
+                            "Pixel art",
+                            "Manga",
+                            "Aquarelle",
+                            "Croquis",
+                            "Peinture à l'huile",
+                            "Low poly",
+                            "Cyberpunk",
+                            "Art déco",
+                            "Noir et blanc",
+                            "Fantaisie",
+                        ]
+                        style = telegram_service.ask_options(
+                            "Choisissez un style d'illustration", styles, timeout=timeout
+                        )
+                        add_text = telegram_service.ask_yes_no(
+                            "Souhaitez-vous ajouter du texte et une date?",
                             timeout=timeout,
                         )
-                        if chosen_image:
-                            chosen_image.seek(0)
-                            path = f"generated_image_{len(selected_image_paths)}.png"
-                            with open(path, "wb") as fh:
-                                fh.write(chosen_image.getvalue())
-                            selected_image_paths = [path]
+                        text = event_date = None
+                        if add_text:
+                            text = telegram_service.ask_text(
+                                "Quel texte souhaitez-vous afficher?", timeout=timeout
+                            )
+                            event_date = telegram_service.ask_text(
+                                "Indiquez la date (JJ/MM/AAAA)", timeout=timeout
+                            )
+                        illustrations = openai_service.generate_illustrations(
+                            last_post, style, text, event_date
+                        )
+                        if illustrations:
+                            chosen_image = telegram_service.ask_image(
+                                "Choisissez une illustration",
+                                illustrations,
+                                timeout=timeout,
+                            )
+                            if chosen_image:
+                                chosen_image.seek(0)
+                                path = f"generated_image_{len(selected_image_paths)}.png"
+                                with open(path, "wb") as fh:
+                                    fh.write(chosen_image.getvalue())
+                                decision = telegram_service.send_message_with_buttons(
+                                    "Que souhaitez-vous faire?",
+                                    ["Valider", "Regénérer", "Retour publication"],
+                                    timeout=timeout,
+                                )
+                                if decision == "Valider":
+                                    selected_image_paths = [path]
+                                    break
+                                if decision == "Regénérer":
+                                    continue
+                                if decision == "Retour publication":
+                                    break
+                        break
                     continue
                 if choice == "Joindre":
                     images = telegram_service.ask_user_images(timeout=timeout)
@@ -144,7 +172,7 @@ def run_workflow(
                 return
 
             if action == "Programmer":
-                now = datetime.utcnow()
+                now = datetime.now(timezone.utc)
                 target = now.replace(hour=20, minute=0, second=0, microsecond=0)
                 if now >= target:
                     target = (now + timedelta(days=1)).replace(
@@ -168,8 +196,10 @@ def run_workflow(
                 telegram_service.send_message("Retour au menu principal.")
                 return
     except TimeoutError:
-        telegram_service.send_message("Inactivité prolongée, retour au menu principal.")
-        return
+        telegram_service.send_message(
+            "Inactivité prolongée, fermeture du programme."
+        )
+        raise SystemExit
     except Exception as err:  # pragma: no cover - log then continue
         logger.exception(f"Erreur lors du traitement : {err}")
 

@@ -4,7 +4,30 @@ import logging
 import sys
 import inspect
 import asyncio
+import os
 from functools import wraps
+
+
+class SensitiveDataFilter(logging.Filter):
+    """Logging filter removing secrets from log records."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        secrets = [
+            os.getenv("TELEGRAM_BOT_TOKEN", ""),
+            os.getenv("OPENAI_API_KEY", ""),
+            os.getenv("ODOO_PASSWORD", ""),
+            os.getenv("PAGE_ACCESS_TOKEN", ""),
+        ]
+        self.secrets = [s for s in secrets if s]
+
+    def filter(self, record: logging.LogRecord) -> bool:  # type: ignore[override]
+        message = record.getMessage()
+        for secret in self.secrets:
+            message = message.replace(secret, "[REDACTED]")
+        record.msg = message
+        record.args = ()
+        return True
 
 
 def setup_logger(name: str) -> logging.Logger:
@@ -50,6 +73,12 @@ def setup_logger(name: str) -> logging.Logger:
 
                 sys.stderr.write(f"Erreur lors de la création des handlers de log : {handler_error}\n")
                 raise
+
+        if not any(isinstance(f, SensitiveDataFilter) for f in root_logger.filters):
+            root_logger.addFilter(SensitiveDataFilter())
+
+        if not any(isinstance(f, SensitiveDataFilter) for f in logger.filters):
+            logger.addFilter(SensitiveDataFilter())
 
         return logger
 

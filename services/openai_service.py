@@ -4,7 +4,6 @@ import re
 from io import BytesIO
 from pathlib import Path
 from typing import List
-from datetime import datetime
 
 from openai import OpenAI, OpenAIError
 from config.log_config import log_execution
@@ -135,23 +134,32 @@ class OpenAIService:
 
     @log_execution
     def generate_illustrations(
-        self, post: str, style: str, event_date: str | None = None
+        self,
+        post: str,
+        style: str,
+        text: str | None = None,
+        event_date: str | None = None,
     ) -> List[BytesIO]:
         """Génère une liste d'illustrations en mémoire dans un style donné.
 
-        L'illustration doit mettre en scène la publication tout en affichant
-        uniquement le texte ``Esplas-de-Sérou <date>`` où ``<date>`` est la date
-        fournie ou, à défaut, la date courante.
+        L'illustration doit mettre en scène la publication tout en affichant le
+        texte ``Esplas-de-Sérou`` complété éventuellement par ``<date>`` et
+        ``<texte>`` lorsque fournis.
 
         Les images renvoyées par l'API sont décodées depuis du base64 et
         converties en ``BytesIO`` afin d'éviter toute écriture sur disque.
         """
 
-        date_str = event_date or datetime.utcnow().strftime("%d/%m/%Y")
+        parts = ["Esplas-de-Sérou"]
+        if event_date:
+            parts.append(event_date)
+        if text:
+            parts.append(text)
+        text_prompt = " ".join(parts)
         prompt = (
             f"Crée une illustration dans un style {style} représentant la "
             f"publication suivante : {post}. L'image doit contenir uniquement le "
-            f"texte Esplas-de-Sérou {date_str} et ne contenir aucun autre texte."
+            f"texte {text_prompt} et ne contenir aucun autre texte."
         )
 
         try:

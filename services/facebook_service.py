@@ -1,6 +1,7 @@
 from typing import List, Union
 from io import BytesIO
-from datetime import datetime
+from datetime import datetime, timezone
+import json
 
 import config
 import requests
@@ -87,16 +88,58 @@ class FacebookService:
     ) -> dict | None:
         """Planifie la publication d'un post sur la page principale."""
         files, fh = self._prepare_files(image)
+        if publish_time.tzinfo is None:
+            # Sans fuseau, interpréter la date comme locale. En supposant UTC,
+            # un post programmé risquait d'être planifié dans le passé et
+            # donc publié immédiatement.
+            publish_time = publish_time.replace(
+                tzinfo=datetime.now().astimezone().tzinfo
+            )
+        publish_time = publish_time.astimezone(timezone.utc)
         timestamp = int(publish_time.timestamp())
 
+        media_id = None
         if files:
-            url = f"https://graph.facebook.com/{self.page_id}/photos"
+            upload_url = f"https://graph.facebook.com/{self.page_id}/photos"
+            upload_data = {
+                "published": "false",
+                "access_token": self.page_token,
+            }
+            try:
+                upload_resp = requests.post(
+                    upload_url, data=upload_data, files=files, timeout=10
+                )
+                upload_resp.raise_for_status()
+                self.logger.info(
+                    f"Facebook page response: {upload_resp.text}"
+                )
+                media_id = upload_resp.json().get("id")
+            except Exception as e:
+                response = getattr(e, "response", None)
+                if response is not None:
+                    try:
+                        error_detail = response.json()
+                    except ValueError:
+                        error_detail = response.text
+                else:
+                    error_detail = str(e)
+                self.logger.exception(
+                    f"Erreur lors du téléversement de la photo : {error_detail}"
+                )
+                raise requests.HTTPError(response=response) from e
+            finally:
+                if fh:
+                    fh.close()
+
+            url = f"https://graph.facebook.com/{self.page_id}/feed"
             data = {
-                "caption": message,
+                "message": message,
                 "published": "false",
                 "scheduled_publish_time": timestamp,
                 "access_token": self.page_token,
+                "attached_media[0]": json.dumps({"media_fbid": media_id}),
             }
+            request_kwargs = {"data": data, "timeout": 10}
         else:
             url = f"https://graph.facebook.com/{self.page_id}/feed"
             data = {
@@ -105,10 +148,7 @@ class FacebookService:
                 "scheduled_publish_time": timestamp,
                 "access_token": self.page_token,
             }
-
-        request_kwargs = {"data": data, "timeout": 10}
-        if files:
-            request_kwargs["files"] = files
+            request_kwargs = {"data": data, "timeout": 10}
 
         try:
             response = requests.post(url, **request_kwargs)
@@ -128,7 +168,4 @@ class FacebookService:
                 f"Erreur lors de la programmation sur la page Facebook : {error_detail}"
             )
             raise requests.HTTPError(response=response) from e
-        finally:
-            if fh:
-                fh.close()
 

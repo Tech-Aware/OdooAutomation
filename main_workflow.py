@@ -17,13 +17,21 @@ def main() -> None:
     openai_service = OpenAIService(logger)
     telegram_service = TelegramService(logger, openai_service)
     telegram_service.start()
+    timeout = 600
 
     try:
         while True:
-            action = telegram_service.send_message_with_buttons(
-                "Que souhaitez-vous faire ?",
-                ["Publier sur Facebook", "Mass Mailing", "Quitter"],
-            )
+            try:
+                action = telegram_service.send_message_with_buttons(
+                    "Que souhaitez-vous faire ?",
+                    ["Publier sur Facebook", "Mass Mailing", "Quitter"],
+                    timeout=timeout,
+                )
+            except TimeoutError:
+                telegram_service.send_message(
+                    "Inactivité prolongée, fermeture du programme."
+                )
+                break
 
             if action == "Publier sur Facebook":
                 try:

@@ -136,6 +136,35 @@ def test_ask_text_accepts_voice_input(mock_app):
 
 
 @patch("services.telegram_service.Application")
+def test_ask_text_or_return_handles_return(mock_app):
+    builder = MagicMock()
+    builder.token.return_value = builder
+    app = MagicMock()
+    app.add_handler = MagicMock()
+    app.bot.send_message = AsyncMock()
+    builder.build.return_value = app
+    mock_app.builder.return_value = builder
+
+    service = TelegramService(MagicMock())
+    loop = asyncio.new_event_loop()
+    service.loop = loop
+
+    async def runner():
+        task = asyncio.create_task(
+            asyncio.to_thread(service.ask_text_or_return, "prompt")
+        )
+        while service._callback_future is None:
+            await asyncio.sleep(0)
+        service._callback_future.set_result("0")
+        return await task
+
+    result = loop.run_until_complete(runner())
+    assert result is None
+    assert app.bot.send_message.await_count == 1
+    loop.close()
+
+
+@patch("services.telegram_service.Application")
 def test_send_message_with_buttons_returns_choice(mock_app):
     builder = MagicMock()
     builder.token.return_value = builder
