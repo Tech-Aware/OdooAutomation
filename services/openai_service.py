@@ -32,7 +32,7 @@ class OpenAIService:
     def generate_event_post(self, text: str) -> str:
         """Génère un post unique à partir d'un texte libre décrivant l'événement."""
         user_prompt = (
-            "Rédige un post pour les réseaux sociaux à partir des informations "
+            "Rédige une publication optimisée pour la plateforme Facebook à partir des informations "
             f"suivantes : {text}"
         )
         messages = [
